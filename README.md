@@ -22,6 +22,25 @@ uv run --no-sync ai-learning
 The Python version is pinned in `.python-version`, while exact dependency
 versions are recorded in `uv.lock`.
 
+## OpenAI connectivity check
+
+Create a local environment file and add your project API key to it:
+
+```bash
+cp .env.example .env
+```
+
+Never commit `.env`. Once `OPENAI_API_KEY` is set, install the locked project
+and run the low-cost connectivity check:
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync --env-file .env openai-check
+```
+
+The command uses the Responses API with the model configured by
+`OPENAI_MODEL` and does not store the response.
+
 ## Repository hygiene
 
 Commit source code, project configuration, migrations, tests, documentation,
