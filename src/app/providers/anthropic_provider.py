@@ -16,8 +16,11 @@ from anthropic import (
 
 from app.providers.base import (
     GenerationResult,
+    ProviderStream,
     ProviderError,
     ProviderErrorKind,
+    StreamCompleted,
+    StreamTextDelta,
 )
 
 
@@ -94,6 +97,70 @@ class AnthropicProvider:
             finish_reason=response.stop_reason or "unknown",
             provider_request_id=getattr(response, "_request_id", None),
         )
+
+    async def stream(self, prompt: str) -> ProviderStream:
+        started_at = perf_counter()
+
+        try:
+            async with self._client.messages.stream(
+                model=self.model,
+                max_tokens=self._max_output_tokens,
+                messages=[{"role": "user", "content": prompt}],
+            ) as provider_stream:
+                async for text in provider_stream.text_stream:
+                    if text:
+                        yield StreamTextDelta(text=text)
+
+                response = await provider_stream.get_final_message()
+                output = "".join(
+                    block.text
+                    for block in response.content
+                    if getattr(block, "type", None) == "text"
+                ).strip()
+                result = GenerationResult(
+                    text=output,
+                    provider=self.name,
+                    model=response.model,
+                    latency_ms=round(
+                        (perf_counter() - started_at) * 1000,
+                        2,
+                    ),
+                    input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    finish_reason=response.stop_reason or "unknown",
+                    provider_request_id=(
+                        provider_stream.request_id
+                        or getattr(response, "_request_id", None)
+                    ),
+                )
+                yield StreamCompleted(result=result)
+        except AuthenticationError as error:
+            raise self._provider_error(
+                ProviderErrorKind.AUTHENTICATION, error
+            ) from error
+        except RateLimitError as error:
+            raise self._provider_error(
+                ProviderErrorKind.RATE_LIMIT, error
+            ) from error
+        except APITimeoutError as error:
+            raise self._provider_error(ProviderErrorKind.TIMEOUT, error) from error
+        except BadRequestError as error:
+            raise self._provider_error(
+                ProviderErrorKind.INVALID_REQUEST, error
+            ) from error
+        except APIConnectionError as error:
+            raise self._provider_error(
+                ProviderErrorKind.UNAVAILABLE, error
+            ) from error
+        except APIStatusError as error:
+            kind = (
+                ProviderErrorKind.UNAVAILABLE
+                if error.status_code >= 500
+                else ProviderErrorKind.FAILURE
+            )
+            raise self._provider_error(kind, error) from error
+        except APIError as error:
+            raise self._provider_error(ProviderErrorKind.FAILURE, error) from error
 
     @staticmethod
     def _provider_error(

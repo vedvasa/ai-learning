@@ -35,11 +35,15 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the browser UI or
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the generated API
 documentation.
 
-The browser UI can send a non-streaming prompt to either configured provider.
-The API key remains on the server; the browser sends only the selected provider,
-configured model, and prompt to `POST /api/generate`. The normalized response
-includes text, latency, token usage, finish reason, the application request ID,
-and the provider request ID.
+The browser UI can stream a prompt through either configured provider. API keys
+remain on the server; the browser sends only the selected provider, configured
+model, and prompt to `POST /api/stream`. FastAPI converts both native provider
+streams into the same server-sent event contract:
+
+- `start` identifies the application request, provider, and model.
+- `delta` contains one incremental text fragment.
+- `complete` reports latency, token usage, finish reason, and provider request ID.
+- `error` safely reports a failure after streaming response headers were sent.
 
 PromptBench currently exposes:
 
@@ -48,6 +52,8 @@ PromptBench currently exposes:
   without making a paid provider request.
 - `POST /api/generate` validates a prompt and makes one non-streaming provider
   call through the selected direct SDK adapter.
+- `POST /api/stream` validates the same request and streams normalized SSE events
+  from the selected direct SDK adapter.
 
 The readiness endpoint returns HTTP `503` until both `OPENAI_API_KEY` and
 `ANTHROPIC_API_KEY` are available. The application reads local development
@@ -55,10 +61,39 @@ values from the ignored `.env` file and uses normal environment variables in
 deployed environments.
 
 Generation requests have an 8,000-character prompt limit, a configured total
-timeout, a model allowlist, and a stable error response. Default application
-logs include provider, model, latency, usage, finish reason, and request IDs,
-but exclude API keys, prompts, and model response text. Streaming via
-`POST /api/stream` is the next Week 1 slice.
+provider deadline, a model allowlist, and a stable error response. The output
+limit remains 64 tokens by default to control learning costs. Default application
+logs include provider, model, latency, usage, finish reason, and request IDs, but
+exclude API keys, prompts, and model response text. Cancelling the browser request
+closes the upstream provider stream.
+
+### Streaming request flow
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant A as FastAPI
+    participant P as Provider adapter
+    participant M as OpenAI or Anthropic
+
+    B->>A: POST /api/stream
+    A->>B: SSE start
+    A->>P: stream(prompt)
+    P->>M: Native streaming request
+    loop For each text fragment
+        M-->>P: Provider delta
+        P-->>A: Normalized text delta
+        A-->>B: SSE delta
+    end
+    M-->>P: Provider completion + usage
+    P-->>A: Normalized completion
+    A-->>B: SSE complete + metrics
+    opt Browser cancels or disconnects
+        B-xA: Connection closes
+        A-xP: Cancel async generator
+        P-xM: Close provider stream
+    end
+```
 
 ## OpenAI connectivity check
 

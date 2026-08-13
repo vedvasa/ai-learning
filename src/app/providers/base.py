@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Literal, Protocol
+from typing import AsyncGenerator, Literal, Protocol
 
 ProviderName = Literal["openai", "anthropic"]
 
@@ -17,6 +17,20 @@ class GenerationResult:
     output_tokens: int
     finish_reason: str
     provider_request_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class StreamTextDelta:
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class StreamCompleted:
+    result: GenerationResult
+
+
+ProviderStreamEvent = StreamTextDelta | StreamCompleted
+ProviderStream = AsyncGenerator[ProviderStreamEvent, None]
 
 
 class ProviderErrorKind(StrEnum):
@@ -45,6 +59,8 @@ class Provider(Protocol):
     model: str
 
     async def generate(self, prompt: str) -> GenerationResult: ...
+
+    def stream(self, prompt: str) -> ProviderStream: ...
 
 
 class ProviderLookupError(Exception):

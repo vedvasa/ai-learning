@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.api.generate import router as generate_router
+from app.api.stream import router as stream_router
 from app.api.health import router as health_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handling
@@ -44,6 +45,7 @@ def create_app(
     register_error_handling(app)
     app.include_router(health_router)
     app.include_router(generate_router)
+    app.include_router(stream_router)
     app.mount(
         "/static",
         StaticFiles(directory=APP_DIRECTORY / "static"),
@@ -76,6 +78,7 @@ def create_app(
                 ),
                 "default_provider": app_settings.llm_provider,
                 "max_prompt_characters": MAX_PROMPT_CHARACTERS,
+                "max_output_tokens": app_settings.llm_max_output_tokens,
             },
         )
 

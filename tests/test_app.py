@@ -81,9 +81,11 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
 
     assert page.status_code == 200
     assert "PromptBench" in page.text
-    assert "Generation API online" in page.text
+    assert "Streaming API online" in page.text
     assert 'id="generation-form"' in page.text
+    assert 'id="cancel-button"' in page.text
     assert 'name="prompt"' in page.text
+    assert "Output is capped at 64 tokens" in " ".join(page.text.split())
     assert "disabled" not in page.text
     assert "private-openai-value" not in page.text
     assert "private-anthropic-value" not in page.text
@@ -93,6 +95,8 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     assert script.headers["content-type"].startswith("text/javascript")
     assert "private-openai-value" not in script.text
     assert "private-anthropic-value" not in script.text
+    assert 'fetch("/api/stream"' in script.text
+    assert "AbortController" in script.text
 
 
 def test_settings_reject_nonpositive_limits() -> None:
