@@ -6,7 +6,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 
 | Week | Release | Status | Live URL | Git tag | Key evaluation | Model spend | Main lesson |
 |---:|---|---|---|---|---|---:|---|
-| 1 | PromptBench | Not started |  |  |  | $0.00 |  |
+| 1 | PromptBench | In progress |  |  |  | $0.00 | HTTP, configuration, and health checks |
 | 2 | Ticket Triage API | Not started |  |  |  | $0.00 |  |
 | 3 | Citation Q&A | Not started |  |  |  | $0.00 |  |
 | 4 | RAG Quality Lab | Not started |  |  |  | $0.00 |  |

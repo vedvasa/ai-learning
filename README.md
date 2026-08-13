@@ -22,6 +22,30 @@ uv run --no-sync ai-learning
 The Python version is pinned in `.python-version`, while exact dependency
 versions are recorded in `uv.lock`.
 
+## Week 1: run PromptBench
+
+Install the locked development environment and start the FastAPI server:
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync uvicorn --app-dir src app.main:app --reload
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the browser UI or
+[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the generated API
+documentation.
+
+The foundation exposes two operational endpoints:
+
+- `GET /health/live` confirms that the web process can serve requests.
+- `GET /health/ready` confirms that both provider keys are configured,
+  without making a paid provider request.
+
+The readiness endpoint returns HTTP `503` until both `OPENAI_API_KEY` and
+`ANTHROPIC_API_KEY` are available. The application reads local development
+values from the ignored `.env` file and uses normal environment variables in
+deployed environments.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
