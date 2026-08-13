@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from ai_learning.app.core.config import Settings
-from ai_learning.app.main import create_app
+from app.core.config import Settings
+from app.main import create_app
 
 
 def make_settings(

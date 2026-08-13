@@ -27,8 +27,8 @@ versions are recorded in `uv.lock`.
 Install the locked development environment and start the FastAPI server:
 
 ```bash
-uv sync --locked
-uv run --no-sync uvicorn ai_learning.app.main:app --reload
+uv sync --locked --no-editable
+uv run --no-sync uvicorn --app-dir src app.main:app --reload
 ```
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the browser UI or

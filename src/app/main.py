@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from ai_learning.app.api.health import router as health_router
-from ai_learning.app.core.config import Settings, get_settings
+from app.api.health import router as health_router
+from app.core.config import Settings, get_settings
 
 APP_DIRECTORY = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=APP_DIRECTORY / "templates")
