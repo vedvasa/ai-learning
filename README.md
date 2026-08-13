@@ -41,6 +41,18 @@ uv run --no-sync --env-file .env openai-check
 The command uses the Responses API with the model configured by
 `OPENAI_MODEL` and does not store the response.
 
+## Anthropic connectivity check
+
+Add `ANTHROPIC_API_KEY` to the same ignored local `.env` file, then run:
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync --env-file .env anthropic-check
+```
+
+The command sends a minimal Messages API request using the model configured by
+`ANTHROPIC_MODEL`.
+
 ## Repository hygiene
 
 Commit source code, project configuration, migrations, tests, documentation,
