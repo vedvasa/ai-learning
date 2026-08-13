@@ -8,6 +8,7 @@
   --accent: #3157d5;
   --accent-dark: #2444ac;
   --success: #177a55;
+  --danger: #b42318;
   --shadow: 0 22px 60px rgba(34, 48, 75, 0.12);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -164,21 +165,41 @@ h1 {
   line-height: 1.55;
 }
 
-.coming-soon {
+.release-badge {
   flex: none;
   padding: 6px 9px;
-  color: var(--muted);
+  color: var(--accent-dark);
   font-size: 0.72rem;
   font-weight: 750;
   text-transform: uppercase;
-  background: #f0f3f7;
+  background: rgba(49, 87, 213, 0.09);
   border-radius: 7px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .field {
   display: grid;
   gap: 8px;
   margin-top: 20px;
+}
+
+.field-heading,
+.result-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.field-heading span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
 }
 
 label {
@@ -220,9 +241,26 @@ button {
   font-weight: 760;
   background: var(--accent);
   border: 0;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
-:disabled {
+button:hover:not(:disabled) {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(49, 87, 213, 0.2);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+button:disabled,
+select:disabled,
+textarea:disabled {
   cursor: not-allowed;
   opacity: 0.64;
 }
@@ -230,6 +268,81 @@ button {
 .hint {
   margin-top: 12px !important;
   font-size: 0.82rem;
+}
+
+.error-message {
+  color: var(--danger) !important;
+}
+
+.result-panel {
+  padding-top: 28px;
+  margin-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.result-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.provider-chip {
+  padding: 5px 9px;
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  background: rgba(49, 87, 213, 0.09);
+  border-radius: 999px;
+}
+
+.result-panel pre {
+  min-height: 128px;
+  padding: 18px;
+  margin: 16px 0 0;
+  overflow: auto;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #fbfcfe;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 18px 0 0;
+  overflow: hidden;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.metrics div {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.metrics dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metrics dd {
+  margin: 4px 0 0;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .check-list {
@@ -293,7 +406,8 @@ button {
 
 @media (max-width: 760px) {
   .hero,
-  .workspace {
+  .workspace,
+  .control-grid {
     grid-template-columns: 1fr;
   }
 
@@ -308,5 +422,9 @@ button {
 
   .card {
     padding: 22px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
   }
 }
