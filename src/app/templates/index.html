@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="{{ url_for('static', path='/styles.css') }}"
     >
+    <script src="{{ url_for('static', path='/app.js') }}" defer></script>
   </head>
   <body>
     <header class="shell site-header">
@@ -30,70 +31,142 @@
         </div>
         <div>
           <p class="hero-copy">
-            A direct, server-side playground for learning how model APIs behave
-            behind a real web application.
+            Compare direct model APIs while the server enforces validation,
+            timeouts, safe errors, and a consistent response contract.
           </p>
           <div class="status-pill" role="status">
             <span class="status-dot" aria-hidden="true"></span>
-            FastAPI foundation online
+            Generation API online
           </div>
         </div>
       </section>
 
       <section class="workspace" aria-label="PromptBench workspace">
-        <article class="card">
+        <article class="card generation-card">
           <div class="card-header">
             <div>
               <h2>Generate a response</h2>
-              <p>The browser will call our server, never a provider directly.</p>
+              <p>The browser calls our FastAPI server, never a provider directly.</p>
             </div>
-            <span class="coming-soon">Next slice</span>
+            <span class="release-badge">Non-streaming</span>
           </div>
 
-          <form>
-            <div class="field">
-              <label for="provider">Provider</label>
-              <select id="provider" name="provider" disabled>
-                {% for provider in providers %}
-                  <option>{{ provider }}</option>
-                {% endfor %}
-              </select>
+          <form id="generation-form">
+            <div class="control-grid">
+              <div class="field">
+                <label for="provider">Provider</label>
+                <select id="provider" name="provider">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.value }}"
+                      {% if provider.value == default_provider %}selected{% endif %}
+                    >{{ provider.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="model">Model</label>
+                <select id="model" name="model">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.model }}"
+                      data-provider="{{ provider.value }}"
+                    >{{ provider.model }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
 
             <div class="field">
-              <label for="prompt">Prompt</label>
+              <div class="field-heading">
+                <label for="prompt">Prompt</label>
+                <span id="prompt-count">0 / {{ max_prompt_characters }}</span>
+              </div>
               <textarea
                 id="prompt"
                 name="prompt"
+                maxlength="{{ max_prompt_characters }}"
                 placeholder="Ask a focused question..."
-                disabled
+                required
               ></textarea>
             </div>
 
-            <button type="submit" disabled>Generate response</button>
-            <p class="hint">
-              Generation is intentionally disabled until the provider contract
-              and stable API error shape are tested.
+            <button id="generate-button" type="submit">
+              <span class="button-label">Generate response</span>
+              <span class="button-progress" hidden>Calling provider…</span>
+            </button>
+            <p id="form-status" class="hint" aria-live="polite">
+              The server applies a {{ max_prompt_characters }}-character limit
+              and a total request timeout.
             </p>
           </form>
+
+          <section id="result" class="result-panel" aria-live="polite" hidden>
+            <div class="result-heading">
+              <h3>Response</h3>
+              <span id="result-provider" class="provider-chip"></span>
+            </div>
+            <pre id="result-text"></pre>
+
+            <dl class="metrics">
+              <div>
+                <dt>Model</dt>
+                <dd id="metric-model">—</dd>
+              </div>
+              <div>
+                <dt>Latency</dt>
+                <dd id="metric-latency">—</dd>
+              </div>
+              <div>
+                <dt>Input tokens</dt>
+                <dd id="metric-input-tokens">—</dd>
+              </div>
+              <div>
+                <dt>Output tokens</dt>
+                <dd id="metric-output-tokens">—</dd>
+              </div>
+              <div>
+                <dt>Finish reason</dt>
+                <dd id="metric-finish-reason">—</dd>
+              </div>
+              <div>
+                <dt>Request ID</dt>
+                <dd id="metric-request-id">—</dd>
+              </div>
+              <div>
+                <dt>Provider request ID</dt>
+                <dd id="metric-provider-request-id">—</dd>
+              </div>
+            </dl>
+          </section>
         </article>
 
         <aside class="card">
-          <h2>Foundation checks</h2>
-          <p>What this release establishes before model traffic is added.</p>
+          <h2>Production boundary</h2>
+          <p>What this release adds around each paid model call.</p>
 
           <ul class="check-list">
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
-              <span><strong>Server-side secrets</strong>Keys stay outside browser code.</span>
+              <span>
+                <strong>Direct SDK adapters</strong>
+                Provider objects stay behind one interface.
+              </span>
             </li>
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
-              <span><strong>Typed settings</strong>Invalid numeric limits fail early.</span>
+              <span>
+                <strong>Safe failures</strong>
+                SDK errors become stable application errors.
+              </span>
             </li>
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
-              <span><strong>Operational health</strong>Liveness and readiness are separate.</span>
+              <span>
+                <strong>Useful telemetry</strong>
+                Latency, tokens, and request IDs are normalized.
+              </span>
             </li>
           </ul>
 
@@ -107,7 +180,7 @@
     </main>
 
     <footer class="shell site-footer">
-      Built as the first production slice of the KnowledgeDesk curriculum.
+      Built as the first production release of the KnowledgeDesk curriculum.
     </footer>
   </body>
 </html>

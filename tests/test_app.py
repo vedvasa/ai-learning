@@ -77,14 +77,22 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     with TestClient(app) as client:
         page = client.get("/")
         stylesheet = client.get("/static/styles.css")
+        script = client.get("/static/app.js")
 
     assert page.status_code == 200
     assert "PromptBench" in page.text
-    assert "FastAPI foundation online" in page.text
+    assert "Generation API online" in page.text
+    assert 'id="generation-form"' in page.text
+    assert 'name="prompt"' in page.text
+    assert "disabled" not in page.text
     assert "private-openai-value" not in page.text
     assert "private-anthropic-value" not in page.text
     assert stylesheet.status_code == 200
     assert stylesheet.headers["content-type"].startswith("text/css")
+    assert script.status_code == 200
+    assert script.headers["content-type"].startswith("text/javascript")
+    assert "private-openai-value" not in script.text
+    assert "private-anthropic-value" not in script.text
 
 
 def test_settings_reject_nonpositive_limits() -> None:
