@@ -234,6 +234,13 @@ textarea {
   resize: vertical;
 }
 
+.form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
 button {
   min-height: 48px;
   margin-top: 20px;
@@ -243,6 +250,23 @@ button {
   border: 0;
   cursor: pointer;
   transition: background 150ms ease, transform 150ms ease;
+}
+
+.cancel-button {
+  width: auto;
+  padding: 0 18px;
+  color: var(--danger);
+  background: rgba(180, 35, 24, 0.06);
+  border: 1px solid rgba(180, 35, 24, 0.2);
+}
+
+.cancel-button:hover:not(:disabled) {
+  color: white;
+  background: var(--danger);
+}
+
+[hidden] {
+  display: none !important;
 }
 
 button:hover:not(:disabled) {
@@ -278,6 +302,11 @@ textarea:disabled {
   padding-top: 28px;
   margin-top: 28px;
   border-top: 1px solid var(--line);
+}
+
+.result-panel.is-streaming pre {
+  border-color: rgba(49, 87, 213, 0.45);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .result-panel h3 {
@@ -422,6 +451,11 @@ textarea:disabled {
 
   .card {
     padding: 22px;
+  }
+
+  .form-actions {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .metrics {

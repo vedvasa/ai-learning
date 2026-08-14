@@ -1,6 +1,6 @@
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import anthropic
 import httpx
@@ -9,7 +9,12 @@ import openai
 import pytest
 
 from app.providers.anthropic_provider import AnthropicProvider
-from app.providers.base import ProviderError, ProviderErrorKind
+from app.providers.base import (
+    ProviderError,
+    ProviderErrorKind,
+    StreamCompleted,
+    StreamTextDelta,
+)
 from app.providers.openai_provider import OpenAIProvider
 
 
@@ -173,3 +178,160 @@ def test_anthropic_adapter_maps_typed_rate_limit_error() -> None:
     assert caught.value.kind is ProviderErrorKind.RATE_LIMIT
     assert caught.value.provider_request_id == "anthropic-rate-limit-123"
     assert "raw provider detail" not in str(caught.value)
+
+
+class FakeOpenAIStream:
+    def __init__(self, events: list[SimpleNamespace]) -> None:
+        self.events = events
+        self.response = SimpleNamespace(
+            headers={"x-request-id": "openai-stream-request-123"}
+        )
+        self.closed = False
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args) -> None:
+        await self.close()
+
+    def __aiter__(self):
+        return self._events()
+
+    async def _events(self):
+        for event in self.events:
+            yield event
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+class FakeAnthropicStream:
+    def __init__(self, text_chunks: list[str], final_message) -> None:
+        self.text_stream = self._text_chunks(text_chunks)
+        self.request_id = "anthropic-stream-request-123"
+        self.get_final_message = AsyncMock(return_value=final_message)
+
+    @staticmethod
+    async def _text_chunks(text_chunks: list[str]):
+        for text in text_chunks:
+            yield text
+
+
+class FakeAnthropicStreamManager:
+    def __init__(self, stream: FakeAnthropicStream) -> None:
+        self.stream = stream
+        self.closed = False
+
+    async def __aenter__(self) -> FakeAnthropicStream:
+        return self.stream
+
+    async def __aexit__(self, *_args) -> None:
+        self.closed = True
+
+
+async def collect_stream(provider, prompt: str):
+    return [event async for event in provider.stream(prompt)]
+
+
+def test_openai_adapter_normalizes_responses_stream() -> None:
+    response = SimpleNamespace(
+        output_text="A streamed OpenAI response.",
+        model="gpt-test",
+        usage=SimpleNamespace(input_tokens=12, output_tokens=8),
+        incomplete_details=None,
+        status="completed",
+        _request_id=None,
+    )
+    provider_stream = FakeOpenAIStream(
+        [
+            SimpleNamespace(
+                type="response.output_text.delta",
+                delta="A streamed ",
+            ),
+            SimpleNamespace(
+                type="response.output_text.delta",
+                delta="OpenAI response.",
+            ),
+            SimpleNamespace(type="response.completed", response=response),
+        ]
+    )
+    create = AsyncMock(return_value=provider_stream)
+    client = SimpleNamespace(responses=SimpleNamespace(create=create))
+    provider = OpenAIProvider(
+        api_key="test-key",
+        model="gpt-test",
+        timeout_seconds=2,
+        max_output_tokens=64,
+        client=client,
+    )
+
+    events = asyncio.run(collect_stream(provider, "A streaming prompt"))
+
+    create.assert_awaited_once_with(
+        model="gpt-test",
+        input="A streaming prompt",
+        max_output_tokens=64,
+        reasoning={"effort": "none"},
+        store=False,
+        stream=True,
+    )
+    assert [event.text for event in events[:2]] == [
+        "A streamed ",
+        "OpenAI response.",
+    ]
+    assert all(isinstance(event, StreamTextDelta) for event in events[:2])
+    assert isinstance(events[2], StreamCompleted)
+    result = events[2].result
+    assert result.text == "A streamed OpenAI response."
+    assert result.input_tokens == 12
+    assert result.output_tokens == 8
+    assert result.finish_reason == "completed"
+    assert result.provider_request_id == "openai-stream-request-123"
+    assert provider_stream.closed is True
+
+
+def test_anthropic_adapter_normalizes_messages_stream() -> None:
+    response = SimpleNamespace(
+        content=[
+            SimpleNamespace(type="text", text="A streamed Anthropic response.")
+        ],
+        model="claude-test",
+        usage=SimpleNamespace(input_tokens=10, output_tokens=7),
+        stop_reason="end_turn",
+        _request_id=None,
+    )
+    provider_stream = FakeAnthropicStream(
+        ["A streamed ", "Anthropic response."],
+        response,
+    )
+    stream_manager = FakeAnthropicStreamManager(provider_stream)
+    stream = Mock(return_value=stream_manager)
+    client = SimpleNamespace(messages=SimpleNamespace(stream=stream))
+    provider = AnthropicProvider(
+        api_key="test-key",
+        model="claude-test",
+        timeout_seconds=2,
+        max_output_tokens=64,
+        client=client,
+    )
+
+    events = asyncio.run(collect_stream(provider, "A streaming prompt"))
+
+    stream.assert_called_once_with(
+        model="claude-test",
+        max_tokens=64,
+        messages=[{"role": "user", "content": "A streaming prompt"}],
+    )
+    assert [event.text for event in events[:2]] == [
+        "A streamed ",
+        "Anthropic response.",
+    ]
+    assert all(isinstance(event, StreamTextDelta) for event in events[:2])
+    assert isinstance(events[2], StreamCompleted)
+    result = events[2].result
+    assert result.text == "A streamed Anthropic response."
+    assert result.input_tokens == 10
+    assert result.output_tokens == 7
+    assert result.finish_reason == "end_turn"
+    assert result.provider_request_id == "anthropic-stream-request-123"
+    assert stream_manager.closed is True

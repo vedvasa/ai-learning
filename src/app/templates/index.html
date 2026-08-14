@@ -36,7 +36,7 @@
           </p>
           <div class="status-pill" role="status">
             <span class="status-dot" aria-hidden="true"></span>
-            Generation API online
+            Streaming API online
           </div>
         </div>
       </section>
@@ -48,7 +48,7 @@
               <h2>Generate a response</h2>
               <p>The browser calls our FastAPI server, never a provider directly.</p>
             </div>
-            <span class="release-badge">Non-streaming</span>
+            <span class="release-badge">Streaming</span>
           </div>
 
           <form id="generation-form">
@@ -92,13 +92,22 @@
               ></textarea>
             </div>
 
-            <button id="generate-button" type="submit">
-              <span class="button-label">Generate response</span>
-              <span class="button-progress" hidden>Calling provider…</span>
-            </button>
+            <div class="form-actions">
+              <button id="generate-button" type="submit">
+                <span class="button-label">Stream response</span>
+                <span class="button-progress" hidden>Streaming response…</span>
+              </button>
+              <button
+                id="cancel-button"
+                class="cancel-button"
+                type="button"
+                hidden
+              >Cancel</button>
+            </div>
             <p id="form-status" class="hint" aria-live="polite">
               The server applies a {{ max_prompt_characters }}-character limit
-              and a total request timeout.
+              and a total provider deadline. Output is capped at
+              {{ max_output_tokens }} tokens.
             </p>
           </form>
 
@@ -144,28 +153,28 @@
 
         <aside class="card">
           <h2>Production boundary</h2>
-          <p>What this release adds around each paid model call.</p>
+          <p>What this release adds to the browser-to-provider stream.</p>
 
           <ul class="check-list">
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
               <span>
-                <strong>Direct SDK adapters</strong>
-                Provider objects stay behind one interface.
+                <strong>Incremental delivery</strong>
+                Native provider deltas become stable application events.
               </span>
             </li>
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
               <span>
-                <strong>Safe failures</strong>
-                SDK errors become stable application errors.
+                <strong>Clean cancellation</strong>
+                A browser disconnect closes the upstream provider stream.
               </span>
             </li>
             <li>
               <span class="check-icon" aria-hidden="true">✓</span>
               <span>
-                <strong>Useful telemetry</strong>
-                Latency, tokens, and request IDs are normalized.
+                <strong>Final telemetry</strong>
+                Completion reports latency, tokens, finish reason, and IDs.
               </span>
             </li>
           </ul>

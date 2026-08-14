@@ -30,3 +30,30 @@ class GenerationResponse(BaseModel):
     output_tokens: int
     finish_reason: str
     provider_request_id: str | None
+
+
+class StreamStart(BaseModel):
+    request_id: str
+    provider: ProviderName
+    model: str
+
+
+class StreamDelta(BaseModel):
+    text: str
+
+
+class StreamCompletion(BaseModel):
+    request_id: str
+    provider: ProviderName
+    model: str
+    latency_ms: float
+    input_tokens: int
+    output_tokens: int
+    finish_reason: str
+    provider_request_id: str | None
+
+
+class StreamFailure(BaseModel):
+    code: str
+    message: str
+    request_id: str
