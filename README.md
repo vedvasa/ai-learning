@@ -95,6 +95,27 @@ sequenceDiagram
     end
 ```
 
+## Week 1: deployment readiness
+
+PromptBench is configured for a Render Free Python web service through the
+repository's [`render.yaml`](render.yaml). The Blueprint installs only locked
+production dependencies, starts Uvicorn on the platform-provided port, uses
+`/health/ready` as the health check, and waits for GitHub CI before automatically
+deploying a commit.
+
+Follow the [Render deployment runbook](docs/RENDER_DEPLOYMENT.md) after the
+deployment-readiness pull request is merged. The runbook covers:
+
+- creating the Blueprint and entering provider keys as Render secrets;
+- validating health, streaming, cancellation, logs, and cold starts;
+- deliberately exercising the safe invalid-key path;
+- rolling back a failed deployment; and
+- recording Week 1 evidence without committing credentials.
+
+The current Free instance type spins down after 15 minutes without inbound
+traffic and can take about one minute to wake. It is suitable for this learning
+deployment, not an availability-sensitive production service.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
