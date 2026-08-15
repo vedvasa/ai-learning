@@ -14,7 +14,6 @@ The Blueprint defines one stateless Python web service:
 - One Uvicorn process bound to `0.0.0.0:$PORT`.
 - `/health/ready` as the deployment and runtime health check.
 - Automatic deployment only after the linked commit's CI checks pass.
-- A 30-second graceful shutdown window for in-flight streams.
 - Secret prompts for `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
 
 Pull request previews are intentionally not enabled. Each preview would need

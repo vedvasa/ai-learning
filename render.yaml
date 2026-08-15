@@ -10,7 +10,6 @@ services:
     startCommand: ./scripts/start-production.sh
     healthCheckPath: /health/ready
     autoDeployTrigger: checksPass
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: APP_ENV
         value: production
