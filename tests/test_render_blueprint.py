@@ -29,7 +29,7 @@ def test_render_blueprint_defines_one_gated_free_web_service() -> None:
     assert service["region"] == "oregon"
     assert service["autoDeployTrigger"] == "checksPass"
     assert service["healthCheckPath"] == "/health/ready"
-    assert service["maxShutdownDelaySeconds"] == 30
+    assert "maxShutdownDelaySeconds" not in service
     assert service["buildCommand"] == (
         "uv sync --locked --no-dev --no-editable"
     )
