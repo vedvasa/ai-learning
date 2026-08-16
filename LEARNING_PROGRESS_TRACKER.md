@@ -48,7 +48,7 @@ structured request logging, locked builds, GitHub CI, and a Render Blueprint.
 
 #### Evidence
 
-- CI run: [PR #9 checks](https://github.com/vedvasa/ai-learning/actions/runs/31898331392)
+- CI run: [PR #10 checks](https://github.com/vedvasa/ai-learning/actions/runs/31919804655)
 - Test summary: 36 tests passed
 - Evaluation report: [Week 1 evidence](docs/evidence/week-1/README.md)
 - Dashboard/screenshots: [OpenAI](docs/evidence/week-1/openai-stream.png) and [Anthropic](docs/evidence/week-1/anthropic-stream.png)
