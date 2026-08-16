@@ -95,26 +95,30 @@ sequenceDiagram
     end
 ```
 
-## Week 1: deployment readiness
+## Week 1: deployed PromptBench
 
-PromptBench is configured for a Render Free Python web service through the
-repository's [`render.yaml`](render.yaml). The Blueprint installs only locked
-production dependencies, starts Uvicorn on the platform-provided port, uses
+PromptBench is deployed at
+[ai-learning-promptbench.onrender.com](https://ai-learning-promptbench.onrender.com/)
+as a Render Free Python web service. Both OpenAI and Anthropic streaming paths
+were verified end to end.
+
+The repository's [`render.yaml`](render.yaml) installs locked production
+dependencies, starts Uvicorn on the platform-provided port, uses
 `/health/ready` as the health check, and waits for GitHub CI before automatically
-deploying a commit.
-
-Follow the [Render deployment runbook](docs/RENDER_DEPLOYMENT.md) after the
-deployment-readiness pull request is merged. The runbook covers:
+deploying a commit. See the [Week 1 evidence](docs/evidence/week-1/README.md) for
+the measured provider calls, screenshots, cost sample, cold-start observation,
+and controlled invalid-key exercise. The
+[Render deployment runbook](docs/RENDER_DEPLOYMENT.md) covers:
 
 - creating the Blueprint and entering provider keys as Render secrets;
 - validating health, streaming, cancellation, logs, and cold starts;
 - deliberately exercising the safe invalid-key path;
 - rolling back a failed deployment; and
-- recording Week 1 evidence without committing credentials.
+- recording release evidence without committing credentials.
 
-The current Free instance type spins down after 15 minutes without inbound
-traffic and can take about one minute to wake. It is suitable for this learning
-deployment, not an availability-sensitive production service.
+The measured Free-tier cold request took more than 30 seconds, while the
+immediate warm request completed in 0.153 seconds. This deployment is suitable
+for learning, not an availability-sensitive production service.
 
 ## OpenAI connectivity check
 
