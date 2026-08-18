@@ -123,16 +123,32 @@ for learning, not an availability-sensitive production service.
 ## Week 2: Ticket Triage API
 
 Week 2 is building a deployed classifier that converts a fictional support
-ticket into validated structured data. The first slice defines strict,
-provider-neutral Pydantic contracts for ticket input, triage output, and future
-API telemetry. It also adds six human-curated synthetic fixtures whose expected
-labels are kept separate from model input.
+ticket into validated structured data. `POST /api/triage` accepts a ticket plus
+an allowlisted provider and model, then returns category, priority, summary,
+sentiment, requested action, human-review status, confidence, rationale, and
+operational telemetry. The Ticket Triage tab exercises that route through the
+browser while preserving the Week 1 prompt playground.
+
+Both direct provider adapters request the same strict `TicketTriage` Pydantic
+model through their SDK-native structured-output helpers. A missing, extra,
+mistyped, refused, or truncated result fails closed before FastAPI constructs a
+success response. Ticket input is serialized as untrusted JSON and kept separate
+from system instructions.
+
+This slice intentionally has no ticket database: request text is processed in
+memory, not persisted, and omitted from application logs. The six committed
+fixtures are fictional evaluation inputs rather than saved user tickets. Triage
+output has a separate 256-token default cap because the eight-field schema needs
+more room than PromptBench's intentionally small 64-token prose limit.
 
 See [ADR 0001](docs/decisions/0001-ticket-triage-contract.md) for the contract
 boundaries and why Jira integration is intentionally outside this week's scope.
-The API route and browser UI will be added with the structured OpenAI and
-Anthropic implementations, so the repository never advertises a fake or
-half-wired classifier.
+See [ADR 0002](docs/decisions/0002-native-structured-output.md) for the direct
+SDK implementation and failure policy. The underlying provider features are
+documented by the
+[OpenAI structured outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs)
+and the
+[Anthropic structured outputs guide](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
 
 ## OpenAI connectivity check
 

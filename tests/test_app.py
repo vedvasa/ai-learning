@@ -29,7 +29,7 @@ def test_liveness_reports_process_identity() -> None:
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "service": "PromptBench",
+        "service": "KnowledgeDesk",
         "version": "0.1.0-test",
     }
 
@@ -80,8 +80,13 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
         script = client.get("/static/app.js")
 
     assert page.status_code == 200
-    assert "PromptBench" in page.text
-    assert "Streaming API online" in page.text
+    assert "KnowledgeDesk" in page.text
+    assert "Structured triage online" in page.text
+    assert 'id="triage-form"' in page.text
+    assert 'name="ticket_id"' in page.text
+    assert 'name="subject"' in page.text
+    assert 'name="channel"' in page.text
+    assert 'name="body"' in page.text
     assert 'id="generation-form"' in page.text
     assert 'id="cancel-button"' in page.text
     assert 'name="prompt"' in page.text
@@ -96,6 +101,7 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     assert "private-openai-value" not in script.text
     assert "private-anthropic-value" not in script.text
     assert 'fetch("/api/stream"' in script.text
+    assert 'fetch("/api/triage"' in script.text
     assert "AbortController" in script.text
 
 
@@ -105,4 +111,5 @@ def test_settings_reject_nonpositive_limits() -> None:
             _env_file=None,
             llm_timeout_seconds=0,
             llm_max_output_tokens=0,
+            triage_max_output_tokens=0,
         )

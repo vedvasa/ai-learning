@@ -61,6 +61,7 @@ def test_render_blueprint_keeps_learning_cost_limits() -> None:
     assert env_vars["UV_VERSION"]["value"] == "0.12.3"
     assert env_vars["LLM_TIMEOUT_SECONDS"]["value"] == "30"
     assert env_vars["LLM_MAX_OUTPUT_TOKENS"]["value"] == "64"
+    assert env_vars["TRIAGE_MAX_OUTPUT_TOKENS"]["value"] == "256"
     assert env_vars["MAX_MODEL_COST_USD_PER_REQUEST"]["value"] == "0.05"
 
 

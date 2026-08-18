@@ -16,15 +16,15 @@ from app.providers.base import (
     ProviderLookupError,
     ProviderRegistry,
 )
-from app.schemas.generation import GenerationRequest, GenerationResponse
+from app.schemas.triage import TicketTriageRequest, TicketTriageResponse
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api", tags=["generation"])
+router = APIRouter(prefix="/api", tags=["ticket triage"])
 
 
 @router.post(
-    "/generate",
-    response_model=GenerationResponse,
+    "/triage",
+    response_model=TicketTriageResponse,
     responses={
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponse},
         status.HTTP_429_TOO_MANY_REQUESTS: {"model": ErrorResponse},
@@ -32,14 +32,14 @@ router = APIRouter(prefix="/api", tags=["generation"])
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ErrorResponse},
         status.HTTP_504_GATEWAY_TIMEOUT: {"model": ErrorResponse},
     },
-    summary="Generate one non-streaming model response",
+    summary="Classify one support ticket into validated structured data",
 )
-async def generate(
-    payload: GenerationRequest,
+async def triage_ticket(
+    payload: TicketTriageRequest,
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
     registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
-) -> GenerationResponse:
+) -> TicketTriageResponse:
     request_id = request_id_for(request)
 
     try:
@@ -58,12 +58,13 @@ async def generate(
 
     try:
         async with asyncio.timeout(settings.llm_timeout_seconds):
-            result = await provider.generate(payload.prompt)
+            result = await provider.triage(payload.ticket)
     except TimeoutError as error:
         logger.warning(
-            "generation_failed request_id=%s provider=%s model=%s "
+            "triage_failed request_id=%s ticket_id=%s provider=%s model=%s "
             "error_kind=total_timeout",
             request_id,
+            payload.ticket.ticket_id,
             payload.provider,
             payload.model,
         )
@@ -75,9 +76,10 @@ async def generate(
         ) from error
     except ProviderError as error:
         logger.warning(
-            "generation_failed request_id=%s provider=%s model=%s "
+            "triage_failed request_id=%s ticket_id=%s provider=%s model=%s "
             "error_kind=%s provider_request_id=%s",
             request_id,
+            payload.ticket.ticket_id,
             payload.provider,
             payload.model,
             error.kind.value,
@@ -91,12 +93,18 @@ async def generate(
         ) from error
 
     logger.info(
-        "generation_completed request_id=%s provider=%s model=%s "
-        "latency_ms=%.2f input_tokens=%d output_tokens=%d "
+        "triage_completed request_id=%s ticket_id=%s provider=%s model=%s "
+        "category=%s priority=%s requires_human_review=%s "
+        "confidence=%.3f latency_ms=%.2f input_tokens=%d output_tokens=%d "
         "finish_reason=%s provider_request_id=%s",
         request_id,
+        payload.ticket.ticket_id,
         result.provider,
         result.model,
+        result.triage.category,
+        result.triage.priority,
+        result.triage.requires_human_review,
+        result.triage.confidence,
         result.latency_ms,
         result.input_tokens,
         result.output_tokens,
@@ -104,9 +112,10 @@ async def generate(
         result.provider_request_id,
     )
 
-    return GenerationResponse(
+    return TicketTriageResponse(
         request_id=request_id,
-        text=result.text,
+        ticket_id=payload.ticket.ticket_id,
+        triage=result.triage,
         provider=result.provider,
         model=result.model,
         latency_ms=result.latency_ms,

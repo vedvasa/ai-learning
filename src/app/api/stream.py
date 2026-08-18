@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.api.generate import get_provider_registry
+from app.api.dependencies import get_provider_registry
 from app.api.provider_errors import PROVIDER_ERROR_RESPONSES
 from app.core.config import Settings, get_settings
 from app.core.errors import ApplicationError, ErrorResponse, request_id_for

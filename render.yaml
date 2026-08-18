@@ -23,6 +23,8 @@ services:
         value: "30"
       - key: LLM_MAX_OUTPUT_TOKENS
         value: "64"
+      - key: TRIAGE_MAX_OUTPUT_TOKENS
+        value: "256"
       - key: MAX_MODEL_COST_USD_PER_REQUEST
         value: "0.05"
       - key: OPENAI_MODEL

@@ -21,7 +21,7 @@ Define three separate contract layers with Pydantic models:
 
 1. `SupportTicket` represents caller-controlled ticket input.
 2. `TicketTriage` is the exact schema a provider must produce.
-3. `TicketTriageRequest` and `TicketTriageResponse` form the future HTTP
+3. `TicketTriageRequest` and `TicketTriageResponse` form the HTTP
    boundary and keep provider telemetry outside the model-generated object.
 
 All contracts reject unknown fields and enforce length or numeric bounds.
@@ -36,9 +36,10 @@ boundary without changing the triage contract.
 
 ## Consequences
 
-- Both provider adapters must satisfy the same schema in the next slice.
+- Both provider adapters satisfy the same schema before returning application
+  data.
 - Invalid model output will fail closed before an API response is constructed.
 - Category and priority changes become deliberate schema-version decisions.
 - Synthetic fixtures are safe to commit and deterministic to test.
-- The first contract PR does not expose a half-implemented endpoint or disabled
-  UI; the working route and UI will be added with the provider implementation.
+- The contract PR did not expose a half-implemented endpoint or disabled UI;
+  the working route and UI arrived with the provider implementation.

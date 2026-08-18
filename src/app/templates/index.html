@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="PromptBench is a production-learning playground for model APIs."
+      content="KnowledgeDesk is a production-learning AI support application."
     >
     <title>{{ app_name }}</title>
     <link
@@ -17,7 +17,7 @@
   <body>
     <header class="shell site-header">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true">P</span>
+        <span class="brand-mark" aria-hidden="true">K</span>
         <span>{{ app_name }}</span>
       </div>
       <span class="version">v{{ app_version }}</span>
@@ -26,27 +26,275 @@
     <main class="shell">
       <section class="hero">
         <div>
-          <p class="eyebrow">KnowledgeDesk · Week 1</p>
-          <h1>From prompt to production service.</h1>
+          <p class="eyebrow">KnowledgeDesk · Week 2</p>
+          <h1>Turn support requests into decisions.</h1>
         </div>
         <div>
           <p class="hero-copy">
-            Compare direct model APIs while the server enforces validation,
-            timeouts, safe errors, and a consistent response contract.
+            Classify tickets through either provider while the server enforces
+            one typed result contract, strict validation, and safe telemetry.
           </p>
           <div class="status-pill" role="status">
             <span class="status-dot" aria-hidden="true"></span>
-            Streaming API online
+            Structured triage online
           </div>
         </div>
       </section>
 
-      <section class="workspace" aria-label="PromptBench workspace">
+      <nav class="mode-tabs" role="tablist" aria-label="KnowledgeDesk tools">
+        <button
+          id="triage-tab"
+          class="mode-tab is-active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="triage-workspace"
+          data-panel="triage-workspace"
+        >Ticket triage</button>
+        <button
+          id="prompt-tab"
+          class="mode-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="prompt-workspace"
+          data-panel="prompt-workspace"
+        >Prompt playground</button>
+      </nav>
+
+      <section
+        id="triage-workspace"
+        class="workspace"
+        role="tabpanel"
+        aria-labelledby="triage-tab"
+      >
+        <article class="card generation-card">
+          <div class="card-header">
+            <div>
+              <h2>Classify a support ticket</h2>
+              <p>Only validated structured data can cross the API boundary.</p>
+            </div>
+            <span class="release-badge">Structured</span>
+          </div>
+
+          <form id="triage-form">
+            <div class="control-grid">
+              <div class="field">
+                <label for="triage-provider">Provider</label>
+                <select id="triage-provider" name="provider">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.value }}"
+                      {% if provider.value == default_provider %}selected{% endif %}
+                    >{{ provider.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="triage-model">Model</label>
+                <select id="triage-model" name="model">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.model }}"
+                      data-provider="{{ provider.value }}"
+                    >{{ provider.model }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="control-grid">
+              <div class="field">
+                <label for="ticket-id">Ticket ID</label>
+                <input
+                  id="ticket-id"
+                  name="ticket_id"
+                  value="TKT-007"
+                  maxlength="{{ max_ticket_id_characters }}"
+                  autocomplete="off"
+                  required
+                >
+              </div>
+
+              <div class="field">
+                <label for="ticket-channel">Channel</label>
+                <select id="ticket-channel" name="channel">
+                  {% for channel in ticket_channels %}
+                    <option value="{{ channel }}">{{ channel|title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="ticket-subject">Subject</label>
+              <input
+                id="ticket-subject"
+                name="subject"
+                maxlength="{{ max_ticket_subject_characters }}"
+                placeholder="Charged twice for my subscription"
+                required
+              >
+            </div>
+
+            <div class="field">
+              <div class="field-heading">
+                <label for="ticket-body">Ticket details</label>
+                <span id="ticket-body-count">
+                  0 / {{ max_ticket_body_characters }}
+                </span>
+              </div>
+              <textarea
+                id="ticket-body"
+                name="body"
+                maxlength="{{ max_ticket_body_characters }}"
+                placeholder="Describe the customer's request..."
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button id="triage-button" type="submit">
+                <span class="button-label">Classify ticket</span>
+                <span class="button-progress" hidden>Classifying ticket…</span>
+              </button>
+              <button
+                id="triage-cancel-button"
+                class="cancel-button"
+                type="button"
+                hidden
+              >Cancel</button>
+            </div>
+            <p id="triage-status" class="hint" aria-live="polite">
+              Ticket text is not stored. Structured output is capped at
+              {{ triage_max_output_tokens }} tokens and validated before return.
+            </p>
+          </form>
+
+          <section
+            id="triage-result"
+            class="result-panel"
+            aria-live="polite"
+            hidden
+          >
+            <div class="result-heading">
+              <h3>Validated triage</h3>
+              <span id="triage-result-provider" class="provider-chip"></span>
+            </div>
+
+            <dl class="triage-result-grid">
+              <div>
+                <dt>Category</dt>
+                <dd id="triage-category">—</dd>
+              </div>
+              <div>
+                <dt>Priority</dt>
+                <dd id="triage-priority" class="priority-value">—</dd>
+              </div>
+              <div>
+                <dt>Sentiment</dt>
+                <dd id="triage-sentiment">—</dd>
+              </div>
+              <div>
+                <dt>Human review</dt>
+                <dd id="triage-human-review">—</dd>
+              </div>
+              <div>
+                <dt>Confidence</dt>
+                <dd id="triage-confidence">—</dd>
+              </div>
+              <div class="wide-result">
+                <dt>Summary</dt>
+                <dd id="triage-summary">—</dd>
+              </div>
+              <div class="wide-result">
+                <dt>Requested action</dt>
+                <dd id="triage-requested-action">—</dd>
+              </div>
+              <div class="wide-result">
+                <dt>Public rationale</dt>
+                <dd id="triage-rationale">—</dd>
+              </div>
+            </dl>
+
+            <dl class="metrics">
+              <div>
+                <dt>Model</dt>
+                <dd id="triage-metric-model">—</dd>
+              </div>
+              <div>
+                <dt>Latency</dt>
+                <dd id="triage-metric-latency">—</dd>
+              </div>
+              <div>
+                <dt>Input tokens</dt>
+                <dd id="triage-metric-input-tokens">—</dd>
+              </div>
+              <div>
+                <dt>Output tokens</dt>
+                <dd id="triage-metric-output-tokens">—</dd>
+              </div>
+              <div>
+                <dt>Request ID</dt>
+                <dd id="triage-metric-request-id">—</dd>
+              </div>
+              <div>
+                <dt>Provider request ID</dt>
+                <dd id="triage-metric-provider-request-id">—</dd>
+              </div>
+            </dl>
+          </section>
+        </article>
+
+        <aside class="card">
+          <h2>Validation boundary</h2>
+          <p>What changes when model text becomes application data.</p>
+
+          <ul class="check-list">
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>One shared schema</strong>
+                Both provider SDKs must produce the same Pydantic model.
+              </span>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>Fail closed</strong>
+                Missing, extra, truncated, or mistyped output is rejected.
+              </span>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>Safe telemetry</strong>
+                Logs contain classifications and usage, not ticket text.
+              </span>
+            </li>
+          </ul>
+
+          <nav class="endpoint-links" aria-label="Application endpoints">
+            <a href="/health/live">/health/live</a>
+            <a href="/health/ready">/health/ready</a>
+            <a href="/docs">/docs</a>
+          </nav>
+        </aside>
+      </section>
+
+      <section
+        id="prompt-workspace"
+        class="workspace"
+        role="tabpanel"
+        aria-labelledby="prompt-tab"
+        hidden
+      >
         <article class="card generation-card">
           <div class="card-header">
             <div>
               <h2>Generate a response</h2>
-              <p>The browser calls our FastAPI server, never a provider directly.</p>
+              <p>The Week 1 streaming playground remains available.</p>
             </div>
             <span class="release-badge">Streaming</span>
           </div>
@@ -152,8 +400,8 @@
         </article>
 
         <aside class="card">
-          <h2>Production boundary</h2>
-          <p>What this release adds to the browser-to-provider stream.</p>
+          <h2>Streaming boundary</h2>
+          <p>The Week 1 browser-to-provider flow remains unchanged.</p>
 
           <ul class="check-list">
             <li>
@@ -178,18 +426,12 @@
               </span>
             </li>
           </ul>
-
-          <nav class="endpoint-links" aria-label="Application endpoints">
-            <a href="/health/live">/health/live</a>
-            <a href="/health/ready">/health/ready</a>
-            <a href="/docs">/docs</a>
-          </nav>
         </aside>
       </section>
     </main>
 
     <footer class="shell site-footer">
-      Built as the first production release of the KnowledgeDesk curriculum.
+      Built as an incremental production release of the KnowledgeDesk curriculum.
     </footer>
   </body>
 </html>

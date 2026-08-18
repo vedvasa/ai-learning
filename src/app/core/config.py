@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "PromptBench"
+    app_name: str = "KnowledgeDesk"
     app_env: str = "development"
     app_version: str = "0.1.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     llm_provider: Literal["openai", "anthropic"] = "openai"
     llm_timeout_seconds: PositiveFloat = 30
     llm_max_output_tokens: PositiveInt = 64
+    triage_max_output_tokens: PositiveInt = 256
     max_model_cost_usd_per_request: PositiveFloat = 0.05
 
     openai_api_key: SecretStr | None = None
