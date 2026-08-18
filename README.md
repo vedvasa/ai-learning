@@ -120,6 +120,20 @@ The measured Free-tier cold request took more than 30 seconds, while the
 immediate warm request completed in 0.153 seconds. This deployment is suitable
 for learning, not an availability-sensitive production service.
 
+## Week 2: Ticket Triage API
+
+Week 2 is building a deployed classifier that converts a fictional support
+ticket into validated structured data. The first slice defines strict,
+provider-neutral Pydantic contracts for ticket input, triage output, and future
+API telemetry. It also adds six human-curated synthetic fixtures whose expected
+labels are kept separate from model input.
+
+See [ADR 0001](docs/decisions/0001-ticket-triage-contract.md) for the contract
+boundaries and why Jira integration is intentionally outside this week's scope.
+The API route and browser UI will be added with the structured OpenAI and
+Anthropic implementations, so the repository never advertises a fake or
+half-wired classifier.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

@@ -1,0 +1,80 @@
+[
+  {
+    "ticket": {
+      "ticket_id": "TKT-001",
+      "subject": "Charged twice for my subscription",
+      "body": "My card shows two August charges. Please refund the duplicate charge.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "billing",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-002",
+      "subject": "Cannot sign in after resetting my password",
+      "body": "The reset succeeded, but every login attempt returns an invalid session error.",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "account_access",
+      "priority": "high",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-003",
+      "subject": "Unknown administrator added to our account",
+      "body": "An administrator we do not recognize appeared today and exported customer records.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "security",
+      "priority": "urgent",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-004",
+      "subject": "Checkout API returns errors",
+      "body": "All checkout requests have returned HTTP 503 for the last twenty minutes.",
+      "channel": "api"
+    },
+    "expected": {
+      "category": "technical_issue",
+      "priority": "high",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-005",
+      "subject": "Cancel at the end of the billing period",
+      "body": "Please cancel our plan after the current paid period and confirm the final date.",
+      "channel": "phone"
+    },
+    "expected": {
+      "category": "cancellation",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-006",
+      "subject": "Add a dark theme",
+      "body": "A dark theme would make the dashboard more comfortable to use at night.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "feature_request",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  }
+]
