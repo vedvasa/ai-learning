@@ -49,7 +49,7 @@ class OpenAIProvider:
         self._client = client or AsyncOpenAI(
             api_key=api_key,
             timeout=timeout_seconds,
-            max_retries=2,
+            max_retries=0,
         )
 
     async def generate(self, prompt: str) -> GenerationResult:
@@ -82,11 +82,7 @@ class OpenAIProvider:
                 ProviderErrorKind.UNAVAILABLE, error
             ) from error
         except APIStatusError as error:
-            kind = (
-                ProviderErrorKind.UNAVAILABLE
-                if error.status_code >= 500
-                else ProviderErrorKind.FAILURE
-            )
+            kind = self._status_error_kind(error)
             raise self._provider_error(kind, error) from error
         except APIError as error:
             raise self._provider_error(ProviderErrorKind.FAILURE, error) from error
@@ -182,11 +178,7 @@ class OpenAIProvider:
                 ProviderErrorKind.UNAVAILABLE, error
             ) from error
         except APIStatusError as error:
-            kind = (
-                ProviderErrorKind.UNAVAILABLE
-                if error.status_code >= 500
-                else ProviderErrorKind.FAILURE
-            )
+            kind = self._status_error_kind(error)
             raise self._provider_error(kind, error) from error
         except APIError as error:
             raise self._provider_error(ProviderErrorKind.FAILURE, error) from error
@@ -223,11 +215,7 @@ class OpenAIProvider:
                 ProviderErrorKind.UNAVAILABLE, error
             ) from error
         except APIStatusError as error:
-            kind = (
-                ProviderErrorKind.UNAVAILABLE
-                if error.status_code >= 500
-                else ProviderErrorKind.FAILURE
-            )
+            kind = self._status_error_kind(error)
             raise self._provider_error(kind, error) from error
         except APIError as error:
             raise self._provider_error(ProviderErrorKind.FAILURE, error) from error
@@ -291,3 +279,11 @@ class OpenAIProvider:
             kind,
             provider_request_id=getattr(error, "request_id", None),
         )
+
+    @staticmethod
+    def _status_error_kind(error: APIStatusError) -> ProviderErrorKind:
+        if error.status_code == 408:
+            return ProviderErrorKind.TIMEOUT
+        if error.status_code == 409 or error.status_code >= 500:
+            return ProviderErrorKind.UNAVAILABLE
+        return ProviderErrorKind.FAILURE

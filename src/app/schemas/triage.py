@@ -116,3 +116,4 @@ class TicketTriageResponse(StrictContract):
     output_tokens: int = Field(ge=0)
     finish_reason: str
     provider_request_id: str | None
+    attempt_count: int = Field(ge=1)

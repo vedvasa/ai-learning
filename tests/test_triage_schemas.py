@@ -141,24 +141,30 @@ def test_request_contract_nests_ticket_and_forbids_extra_input() -> None:
 
 
 def test_response_contract_keeps_triage_separate_from_telemetry() -> None:
-    response = TicketTriageResponse.model_validate(
-        {
-            "request_id": "request-123",
-            "ticket_id": "TKT-100",
-            "triage": valid_triage(),
-            "provider": "anthropic",
-            "model": "model-test",
-            "latency_ms": 125.5,
-            "input_tokens": 42,
-            "output_tokens": 71,
-            "finish_reason": "end_turn",
-            "provider_request_id": "provider-request-123",
-        }
-    )
+    response_payload = {
+        "request_id": "request-123",
+        "ticket_id": "TKT-100",
+        "triage": valid_triage(),
+        "provider": "anthropic",
+        "model": "model-test",
+        "latency_ms": 125.5,
+        "input_tokens": 42,
+        "output_tokens": 71,
+        "finish_reason": "end_turn",
+        "provider_request_id": "provider-request-123",
+        "attempt_count": 2,
+    }
+    response = TicketTriageResponse.model_validate(response_payload)
 
     assert response.triage.category is TicketCategory.BILLING
     assert response.provider == "anthropic"
     assert response.input_tokens == 42
+    assert response.attempt_count == 2
+
+    with pytest.raises(ValidationError):
+        TicketTriageResponse.model_validate(
+            {**response_payload, "attempt_count": 0}
+        )
 
 
 def test_json_schema_marks_output_fields_required_and_closed() -> None:

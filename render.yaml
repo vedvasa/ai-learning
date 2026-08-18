@@ -21,6 +21,14 @@ services:
         value: openai
       - key: LLM_TIMEOUT_SECONDS
         value: "30"
+      - key: LLM_MAX_ATTEMPTS
+        value: "3"
+      - key: LLM_RETRY_BASE_DELAY_SECONDS
+        value: "0.25"
+      - key: LLM_RETRY_MAX_DELAY_SECONDS
+        value: "2"
+      - key: LLM_RETRY_JITTER_RATIO
+        value: "0.25"
       - key: LLM_MAX_OUTPUT_TOKENS
         value: "64"
       - key: TRIAGE_MAX_OUTPUT_TOKENS

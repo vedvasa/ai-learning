@@ -6,6 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PositiveFloat = Annotated[float, Field(gt=0)]
 PositiveInt = Annotated[int, Field(gt=0)]
+RetryAttempts = Annotated[int, Field(ge=1, le=5)]
+RetryDelay = Annotated[float, Field(ge=0, le=60)]
+RetryJitter = Annotated[float, Field(ge=0, le=1)]
 
 
 class Settings(BaseSettings):
@@ -23,6 +26,10 @@ class Settings(BaseSettings):
 
     llm_provider: Literal["openai", "anthropic"] = "openai"
     llm_timeout_seconds: PositiveFloat = 30
+    llm_max_attempts: RetryAttempts = 3
+    llm_retry_base_delay_seconds: RetryDelay = 0.25
+    llm_retry_max_delay_seconds: RetryDelay = 2
+    llm_retry_jitter_ratio: RetryJitter = 0.25
     llm_max_output_tokens: PositiveInt = 64
     triage_max_output_tokens: PositiveInt = 256
     max_model_cost_usd_per_request: PositiveFloat = 0.05

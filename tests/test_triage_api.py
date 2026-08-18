@@ -24,9 +24,11 @@ class FakeTriageProvider:
         self,
         *,
         error: Exception | None = None,
+        errors_before_success: list[ProviderError] | None = None,
         delay_seconds: float = 0,
     ) -> None:
         self.error = error
+        self.errors_before_success = list(errors_before_success or [])
         self.delay_seconds = delay_seconds
         self.tickets: list[SupportTicket] = []
 
@@ -34,6 +36,8 @@ class FakeTriageProvider:
         self.tickets.append(ticket)
         if self.delay_seconds:
             await asyncio.sleep(self.delay_seconds)
+        if self.errors_before_success:
+            raise self.errors_before_success.pop(0)
         if self.error is not None:
             raise self.error
         return TriageResult(
@@ -57,7 +61,11 @@ class FakeTriageProvider:
         )
 
 
-def make_settings(*, timeout_seconds: float = 1) -> Settings:
+def make_settings(
+    *,
+    timeout_seconds: float = 1,
+    max_attempts: int = 3,
+) -> Settings:
     return Settings(
         _env_file=None,
         app_env="test",
@@ -66,6 +74,8 @@ def make_settings(*, timeout_seconds: float = 1) -> Settings:
         openai_model="gpt-test",
         anthropic_model="claude-test",
         llm_timeout_seconds=timeout_seconds,
+        llm_max_attempts=max_attempts,
+        llm_retry_base_delay_seconds=0,
     )
 
 
@@ -73,10 +83,14 @@ def make_client(
     provider: FakeTriageProvider | None,
     *,
     timeout_seconds: float = 1,
+    max_attempts: int = 3,
 ) -> TestClient:
     providers = [] if provider is None else [provider]
     app = create_app(
-        make_settings(timeout_seconds=timeout_seconds),
+        make_settings(
+            timeout_seconds=timeout_seconds,
+            max_attempts=max_attempts,
+        ),
         provider_registry=ProviderRegistry(providers),
     )
     return TestClient(app)
@@ -134,6 +148,7 @@ def test_triage_returns_validated_result_and_safe_telemetry(caplog) -> None:
         "output_tokens": 64,
         "finish_reason": "completed",
         "provider_request_id": "provider-triage-123",
+        "attempt_count": 1,
     }
     assert len(provider.tickets) == 1
     assert provider.tickets[0].ticket_id == "TKT-200"
@@ -209,6 +224,45 @@ def test_triage_maps_invalid_provider_output_to_safe_error() -> None:
         }
     }
     assert "invalid-provider-output-123" not in response.text
+    assert len(provider.tickets) == 1
+
+
+def test_triage_retries_rate_limits_then_returns_validated_result(
+    caplog,
+) -> None:
+    provider = FakeTriageProvider(
+        errors_before_success=[
+            ProviderError(ProviderErrorKind.RATE_LIMIT),
+            ProviderError(ProviderErrorKind.RATE_LIMIT),
+        ]
+    )
+
+    with caplog.at_level(logging.INFO, logger="app.api.triage"):
+        with make_client(provider) as client:
+            response = client.post("/api/triage", json=triage_payload())
+
+    assert response.status_code == 200
+    assert response.json()["attempt_count"] == 3
+    assert len(provider.tickets) == 3
+    assert caplog.text.count("triage_retry_scheduled") == 2
+    assert "attempt_count=3" in caplog.text
+    assert "private customer detail" not in caplog.text
+
+
+def test_triage_stops_after_bounded_transient_attempts(caplog) -> None:
+    provider = FakeTriageProvider(
+        error=ProviderError(ProviderErrorKind.UNAVAILABLE)
+    )
+
+    with caplog.at_level(logging.INFO, logger="app.api.triage"):
+        with make_client(provider) as client:
+            response = client.post("/api/triage", json=triage_payload())
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "provider_unavailable"
+    assert len(provider.tickets) == 3
+    assert caplog.text.count("triage_retry_scheduled") == 2
+    assert "attempt_count=3" in caplog.text
 
 
 def test_triage_applies_total_request_timeout() -> None:

@@ -64,10 +64,12 @@ class ProviderError(Exception):
         kind: ProviderErrorKind,
         *,
         provider_request_id: str | None = None,
+        attempt_count: int = 1,
     ) -> None:
         super().__init__(kind.value)
         self.kind = kind
         self.provider_request_id = provider_request_id
+        self.attempt_count = attempt_count
 
 
 class Provider(Protocol):

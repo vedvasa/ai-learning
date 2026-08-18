@@ -90,6 +90,7 @@ const triageFields = {
   latency: document.querySelector("#triage-metric-latency"),
   inputTokens: document.querySelector("#triage-metric-input-tokens"),
   outputTokens: document.querySelector("#triage-metric-output-tokens"),
+  attemptCount: document.querySelector("#triage-metric-attempt-count"),
   requestId: document.querySelector("#triage-metric-request-id"),
   providerRequestId: document.querySelector(
     "#triage-metric-provider-request-id",
@@ -136,6 +137,7 @@ function renderTriageResult(data) {
   triageFields.latency.textContent = `${data.latency_ms.toFixed(2)} ms`;
   triageFields.inputTokens.textContent = data.input_tokens;
   triageFields.outputTokens.textContent = data.output_tokens;
+  triageFields.attemptCount.textContent = data.attempt_count;
   triageFields.requestId.textContent = data.request_id;
   triageFields.providerRequestId.textContent =
     data.provider_request_id || "Not supplied";

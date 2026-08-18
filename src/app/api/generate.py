@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Annotated
 
@@ -17,6 +16,11 @@ from app.providers.base import (
     ProviderRegistry,
 )
 from app.schemas.generation import GenerationRequest, GenerationResponse
+from app.services.retry import (
+    RetryDeadlineExceeded,
+    RetryPolicy,
+    call_with_retry,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["generation"])
@@ -56,16 +60,41 @@ async def generate(
             status_code=status_code,
         ) from error
 
-    try:
-        async with asyncio.timeout(settings.llm_timeout_seconds):
-            result = await provider.generate(payload.prompt)
-    except TimeoutError as error:
+    def log_retry(
+        failed_attempt: int,
+        error: ProviderError,
+        delay_seconds: float,
+    ) -> None:
         logger.warning(
-            "generation_failed request_id=%s provider=%s model=%s "
-            "error_kind=total_timeout",
+            "generation_retry_scheduled request_id=%s provider=%s model=%s "
+            "failed_attempt=%d next_attempt=%d delay_seconds=%.3f "
+            "error_kind=%s provider_request_id=%s",
             request_id,
             payload.provider,
             payload.model,
+            failed_attempt,
+            failed_attempt + 1,
+            delay_seconds,
+            error.kind.value,
+            error.provider_request_id,
+        )
+
+    try:
+        outcome = await call_with_retry(
+            lambda: provider.generate(payload.prompt),
+            policy=RetryPolicy.from_settings(settings),
+            timeout_seconds=settings.llm_timeout_seconds,
+            on_retry=log_retry,
+        )
+        result = outcome.value
+    except RetryDeadlineExceeded as error:
+        logger.warning(
+            "generation_failed request_id=%s provider=%s model=%s "
+            "error_kind=total_timeout attempt_count=%d",
+            request_id,
+            payload.provider,
+            payload.model,
+            error.attempt_count,
         )
         timeout_response = PROVIDER_ERROR_RESPONSES[ProviderErrorKind.TIMEOUT]
         raise ApplicationError(
@@ -76,11 +105,12 @@ async def generate(
     except ProviderError as error:
         logger.warning(
             "generation_failed request_id=%s provider=%s model=%s "
-            "error_kind=%s provider_request_id=%s",
+            "error_kind=%s attempt_count=%d provider_request_id=%s",
             request_id,
             payload.provider,
             payload.model,
             error.kind.value,
+            error.attempt_count,
             error.provider_request_id,
         )
         mapped_error = PROVIDER_ERROR_RESPONSES[error.kind]
@@ -93,7 +123,7 @@ async def generate(
     logger.info(
         "generation_completed request_id=%s provider=%s model=%s "
         "latency_ms=%.2f input_tokens=%d output_tokens=%d "
-        "finish_reason=%s provider_request_id=%s",
+        "finish_reason=%s attempt_count=%d provider_request_id=%s",
         request_id,
         result.provider,
         result.model,
@@ -101,6 +131,7 @@ async def generate(
         result.input_tokens,
         result.output_tokens,
         result.finish_reason,
+        outcome.attempt_count,
         result.provider_request_id,
     )
 
@@ -114,4 +145,5 @@ async def generate(
         output_tokens=result.output_tokens,
         finish_reason=result.finish_reason,
         provider_request_id=result.provider_request_id,
+        attempt_count=outcome.attempt_count,
     )

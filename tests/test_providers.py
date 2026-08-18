@@ -1,6 +1,6 @@
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import anthropic
 import httpx
@@ -16,6 +16,62 @@ from app.providers.base import (
     StreamTextDelta,
 )
 from app.providers.openai_provider import OpenAIProvider
+
+
+def test_provider_clients_disable_hidden_sdk_retries() -> None:
+    with patch("app.providers.openai_provider.AsyncOpenAI") as openai_client:
+        OpenAIProvider(
+            api_key="test-openai-key",
+            model="gpt-test",
+            timeout_seconds=7,
+            max_output_tokens=64,
+        )
+
+    openai_client.assert_called_once_with(
+        api_key="test-openai-key",
+        timeout=7,
+        max_retries=0,
+    )
+
+    with patch(
+        "app.providers.anthropic_provider.AsyncAnthropic"
+    ) as anthropic_client:
+        AnthropicProvider(
+            api_key="test-anthropic-key",
+            model="claude-test",
+            timeout_seconds=7,
+            max_output_tokens=64,
+        )
+
+    anthropic_client.assert_called_once_with(
+        api_key="test-anthropic-key",
+        timeout=7,
+        max_retries=0,
+    )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_kind"),
+    [
+        (408, ProviderErrorKind.TIMEOUT),
+        (409, ProviderErrorKind.UNAVAILABLE),
+        (500, ProviderErrorKind.UNAVAILABLE),
+        (529, ProviderErrorKind.UNAVAILABLE),
+        (422, ProviderErrorKind.FAILURE),
+    ],
+)
+@pytest.mark.parametrize(
+    "provider_class",
+    [OpenAIProvider, AnthropicProvider],
+)
+def test_provider_status_errors_have_explicit_retry_classification(
+    provider_class,
+    status_code: int,
+    expected_kind: ProviderErrorKind,
+) -> None:
+    error = SimpleNamespace(status_code=status_code)
+
+    assert provider_class._status_error_kind(error) is expected_kind
 
 
 def test_openai_adapter_normalizes_responses_api_result() -> None:
