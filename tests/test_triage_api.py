@@ -1,0 +1,221 @@
+from __future__ import annotations
+
+import asyncio
+import logging
+
+from fastapi.testclient import TestClient
+
+from app.core.config import Settings
+from app.main import create_app
+from app.providers.base import (
+    ProviderError,
+    ProviderErrorKind,
+    ProviderRegistry,
+    TriageResult,
+)
+from app.schemas.triage import SupportTicket, TicketTriage
+
+
+class FakeTriageProvider:
+    name = "openai"
+    model = "gpt-test"
+
+    def __init__(
+        self,
+        *,
+        error: Exception | None = None,
+        delay_seconds: float = 0,
+    ) -> None:
+        self.error = error
+        self.delay_seconds = delay_seconds
+        self.tickets: list[SupportTicket] = []
+
+    async def triage(self, ticket: SupportTicket) -> TriageResult:
+        self.tickets.append(ticket)
+        if self.delay_seconds:
+            await asyncio.sleep(self.delay_seconds)
+        if self.error is not None:
+            raise self.error
+        return TriageResult(
+            triage=TicketTriage(
+                category="billing",
+                priority="medium",
+                summary="The customer reports a duplicate charge.",
+                sentiment="negative",
+                requested_action="Verify and refund the duplicate if confirmed.",
+                requires_human_review=True,
+                confidence=0.97,
+                rationale="A refund changes billing records and needs approval.",
+            ),
+            provider="openai",
+            model=self.model,
+            latency_ms=18.25,
+            input_tokens=82,
+            output_tokens=64,
+            finish_reason="completed",
+            provider_request_id="provider-triage-123",
+        )
+
+
+def make_settings(*, timeout_seconds: float = 1) -> Settings:
+    return Settings(
+        _env_file=None,
+        app_env="test",
+        openai_api_key="test-openai-key",
+        anthropic_api_key="test-anthropic-key",
+        openai_model="gpt-test",
+        anthropic_model="claude-test",
+        llm_timeout_seconds=timeout_seconds,
+    )
+
+
+def make_client(
+    provider: FakeTriageProvider | None,
+    *,
+    timeout_seconds: float = 1,
+) -> TestClient:
+    providers = [] if provider is None else [provider]
+    app = create_app(
+        make_settings(timeout_seconds=timeout_seconds),
+        provider_registry=ProviderRegistry(providers),
+    )
+    return TestClient(app)
+
+
+def triage_payload(**ticket_overrides: object) -> dict[str, object]:
+    ticket: dict[str, object] = {
+        "ticket_id": "TKT-200",
+        "subject": "Duplicate charge contains private text",
+        "body": "The invoice was charged twice; private customer detail.",
+        "channel": "email",
+    }
+    ticket.update(ticket_overrides)
+    return {
+        "provider": "openai",
+        "model": "gpt-test",
+        "ticket": ticket,
+    }
+
+
+def test_triage_returns_validated_result_and_safe_telemetry(caplog) -> None:
+    provider = FakeTriageProvider()
+
+    with caplog.at_level(logging.INFO, logger="app.api.triage"):
+        with make_client(provider) as client:
+            response = client.post(
+                "/api/triage",
+                json=triage_payload(),
+                headers={"X-Request-ID": "triage-request-123"},
+            )
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "triage-request-123"
+    assert response.json() == {
+        "request_id": "triage-request-123",
+        "ticket_id": "TKT-200",
+        "triage": {
+            "category": "billing",
+            "priority": "medium",
+            "summary": "The customer reports a duplicate charge.",
+            "sentiment": "negative",
+            "requested_action": (
+                "Verify and refund the duplicate if confirmed."
+            ),
+            "requires_human_review": True,
+            "confidence": 0.97,
+            "rationale": (
+                "A refund changes billing records and needs approval."
+            ),
+        },
+        "provider": "openai",
+        "model": "gpt-test",
+        "latency_ms": 18.25,
+        "input_tokens": 82,
+        "output_tokens": 64,
+        "finish_reason": "completed",
+        "provider_request_id": "provider-triage-123",
+    }
+    assert len(provider.tickets) == 1
+    assert provider.tickets[0].ticket_id == "TKT-200"
+    assert "triage_completed" in caplog.text
+    assert "category=billing" in caplog.text
+    assert "priority=medium" in caplog.text
+    assert "Duplicate charge contains private text" not in caplog.text
+    assert "private customer detail" not in caplog.text
+    assert "The customer reports a duplicate charge" not in caplog.text
+
+
+def test_triage_rejects_invalid_ticket_before_provider_call() -> None:
+    provider = FakeTriageProvider()
+
+    with make_client(provider) as client:
+        response = client.post(
+            "/api/triage",
+            json=triage_payload(body="   "),
+            headers={"X-Request-ID": "invalid-ticket-request"},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_request"
+    assert response.json()["error"]["request_id"] == "invalid-ticket-request"
+    assert response.json()["error"]["details"][0]["field"] == "body.ticket.body"
+    assert provider.tickets == []
+
+
+def test_triage_rejects_model_outside_allowlist() -> None:
+    provider = FakeTriageProvider()
+    payload = triage_payload()
+    payload["model"] = "unconfigured-expensive-model"
+
+    with make_client(provider) as client:
+        response = client.post("/api/triage", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "unsupported_model"
+    assert provider.tickets == []
+
+
+def test_triage_reports_provider_that_is_not_configured() -> None:
+    with make_client(None) as client:
+        response = client.post("/api/triage", json=triage_payload())
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "provider_not_configured"
+
+
+def test_triage_maps_invalid_provider_output_to_safe_error() -> None:
+    provider = FakeTriageProvider(
+        error=ProviderError(
+            ProviderErrorKind.INVALID_OUTPUT,
+            provider_request_id="invalid-provider-output-123",
+        )
+    )
+
+    with make_client(provider) as client:
+        response = client.post(
+            "/api/triage",
+            json=triage_payload(),
+            headers={"X-Request-ID": "invalid-output-request"},
+        )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "error": {
+            "code": "provider_invalid_output",
+            "message": (
+                "The selected provider did not return a valid structured result."
+            ),
+            "request_id": "invalid-output-request",
+        }
+    }
+    assert "invalid-provider-output-123" not in response.text
+
+
+def test_triage_applies_total_request_timeout() -> None:
+    provider = FakeTriageProvider(delay_seconds=0.05)
+
+    with make_client(provider, timeout_seconds=0.001) as client:
+        response = client.post("/api/triage", json=triage_payload())
+
+    assert response.status_code == 504
+    assert response.json()["error"]["code"] == "provider_timeout"

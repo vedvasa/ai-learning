@@ -16,6 +16,9 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                     model=settings.openai_model,
                     timeout_seconds=settings.llm_timeout_seconds,
                     max_output_tokens=settings.llm_max_output_tokens,
+                    triage_max_output_tokens=(
+                        settings.triage_max_output_tokens
+                    ),
                 )
             )
 
@@ -30,6 +33,9 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                     model=settings.anthropic_model,
                     timeout_seconds=settings.llm_timeout_seconds,
                     max_output_tokens=settings.llm_max_output_tokens,
+                    triage_max_output_tokens=(
+                        settings.triage_max_output_tokens
+                    ),
                 )
             )
 

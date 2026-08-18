@@ -1,3 +1,223 @@
+const modeTabs = document.querySelectorAll(".mode-tab");
+const workspaces = document.querySelectorAll('[role="tabpanel"]');
+
+function selectWorkspace(tab) {
+  for (const candidate of modeTabs) {
+    const isSelected = candidate === tab;
+    candidate.classList.toggle("is-active", isSelected);
+    candidate.setAttribute("aria-selected", String(isSelected));
+  }
+
+  for (const workspace of workspaces) {
+    workspace.hidden = workspace.id !== tab.dataset.panel;
+  }
+}
+
+for (const tab of modeTabs) {
+  tab.addEventListener("click", () => selectWorkspace(tab));
+}
+
+function syncModelOptions(providerSelect, modelSelect) {
+  const selectedProvider = providerSelect.value;
+  let firstMatchingOption = null;
+
+  for (const option of modelSelect.options) {
+    const matchesProvider = option.dataset.provider === selectedProvider;
+    option.hidden = !matchesProvider;
+    option.disabled = !matchesProvider;
+
+    if (matchesProvider && firstMatchingOption === null) {
+      firstMatchingOption = option;
+    }
+  }
+
+  if (firstMatchingOption !== null) {
+    modelSelect.value = firstMatchingOption.value;
+  }
+}
+
+function createRequestId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `browser-${Date.now()}`;
+}
+
+async function responseErrorMessage(response) {
+  try {
+    const data = await response.json();
+    return data.error?.message || "The request failed safely.";
+  } catch {
+    return "The request failed safely.";
+  }
+}
+
+function showFormError(status, message) {
+  status.textContent = message;
+  status.classList.add("error-message");
+}
+
+// Week 2: structured ticket triage.
+const triageForm = document.querySelector("#triage-form");
+const triageProvider = document.querySelector("#triage-provider");
+const triageModel = document.querySelector("#triage-model");
+const ticketId = document.querySelector("#ticket-id");
+const ticketChannel = document.querySelector("#ticket-channel");
+const ticketSubject = document.querySelector("#ticket-subject");
+const ticketBody = document.querySelector("#ticket-body");
+const ticketBodyCount = document.querySelector("#ticket-body-count");
+const triageButton = document.querySelector("#triage-button");
+const triageCancelButton = document.querySelector("#triage-cancel-button");
+const triageButtonLabel = triageButton.querySelector(".button-label");
+const triageButtonProgress = triageButton.querySelector(".button-progress");
+const triageStatus = document.querySelector("#triage-status");
+const triageResultPanel = document.querySelector("#triage-result");
+
+let activeTriageRequest = null;
+
+const triageFields = {
+  provider: document.querySelector("#triage-result-provider"),
+  category: document.querySelector("#triage-category"),
+  priority: document.querySelector("#triage-priority"),
+  sentiment: document.querySelector("#triage-sentiment"),
+  humanReview: document.querySelector("#triage-human-review"),
+  confidence: document.querySelector("#triage-confidence"),
+  summary: document.querySelector("#triage-summary"),
+  requestedAction: document.querySelector("#triage-requested-action"),
+  rationale: document.querySelector("#triage-rationale"),
+  model: document.querySelector("#triage-metric-model"),
+  latency: document.querySelector("#triage-metric-latency"),
+  inputTokens: document.querySelector("#triage-metric-input-tokens"),
+  outputTokens: document.querySelector("#triage-metric-output-tokens"),
+  requestId: document.querySelector("#triage-metric-request-id"),
+  providerRequestId: document.querySelector(
+    "#triage-metric-provider-request-id",
+  ),
+};
+
+function formatLabel(value) {
+  return value.replaceAll("_", " ");
+}
+
+function setTriageBusy(isBusy) {
+  for (const control of [
+    triageProvider,
+    triageModel,
+    ticketId,
+    ticketChannel,
+    ticketSubject,
+    ticketBody,
+  ]) {
+    control.disabled = isBusy;
+  }
+
+  triageButton.disabled = isBusy;
+  triageCancelButton.hidden = !isBusy;
+  triageButtonLabel.hidden = isBusy;
+  triageButtonProgress.hidden = !isBusy;
+}
+
+function renderTriageResult(data) {
+  const triage = data.triage;
+  triageFields.provider.textContent = data.provider;
+  triageFields.category.textContent = formatLabel(triage.category);
+  triageFields.priority.textContent = triage.priority;
+  triageFields.priority.dataset.priority = triage.priority;
+  triageFields.sentiment.textContent = triage.sentiment;
+  triageFields.humanReview.textContent = triage.requires_human_review
+    ? "Required"
+    : "Not required";
+  triageFields.confidence.textContent = `${(triage.confidence * 100).toFixed(0)}%`;
+  triageFields.summary.textContent = triage.summary;
+  triageFields.requestedAction.textContent = triage.requested_action;
+  triageFields.rationale.textContent = triage.rationale;
+  triageFields.model.textContent = data.model;
+  triageFields.latency.textContent = `${data.latency_ms.toFixed(2)} ms`;
+  triageFields.inputTokens.textContent = data.input_tokens;
+  triageFields.outputTokens.textContent = data.output_tokens;
+  triageFields.requestId.textContent = data.request_id;
+  triageFields.providerRequestId.textContent =
+    data.provider_request_id || "Not supplied";
+  triageResultPanel.hidden = false;
+}
+
+triageProvider.addEventListener("change", () => {
+  syncModelOptions(triageProvider, triageModel);
+});
+
+ticketBody.addEventListener("input", () => {
+  ticketBodyCount.textContent =
+    `${ticketBody.value.length} / ${ticketBody.maxLength}`;
+});
+
+triageCancelButton.addEventListener("click", () => {
+  activeTriageRequest?.abort();
+});
+
+triageForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (
+    !ticketId.value.trim() ||
+    !ticketSubject.value.trim() ||
+    !ticketBody.value.trim()
+  ) {
+    showFormError(triageStatus, "Enter a ticket ID, subject, and description.");
+    return;
+  }
+
+  triageStatus.classList.remove("error-message");
+  triageStatus.textContent = "Requesting a validated classification…";
+  triageResultPanel.hidden = true;
+  setTriageBusy(true);
+  activeTriageRequest = new AbortController();
+
+  try {
+    const response = await fetch("/api/triage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Request-ID": createRequestId(),
+      },
+      body: JSON.stringify({
+        provider: triageProvider.value,
+        model: triageModel.value,
+        ticket: {
+          ticket_id: ticketId.value.trim(),
+          subject: ticketSubject.value.trim(),
+          body: ticketBody.value.trim(),
+          channel: ticketChannel.value,
+        },
+      }),
+      signal: activeTriageRequest.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await responseErrorMessage(response));
+    }
+
+    const data = await response.json();
+    renderTriageResult(data);
+    triageStatus.textContent = "Ticket classified and schema validated.";
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      triageStatus.classList.remove("error-message");
+      triageStatus.textContent = "Classification cancelled.";
+    } else {
+      const message =
+        error instanceof Error ? error.message : "The request failed.";
+      showFormError(triageStatus, message);
+    }
+  } finally {
+    activeTriageRequest = null;
+    setTriageBusy(false);
+  }
+});
+
+syncModelOptions(triageProvider, triageModel);
+
+// Week 1: streaming prompt playground.
 const form = document.querySelector("#generation-form");
 const providerSelect = document.querySelector("#provider");
 const modelSelect = document.querySelector("#model");
@@ -24,25 +244,6 @@ const resultFields = {
   providerRequestId: document.querySelector("#metric-provider-request-id"),
 };
 
-function syncModelOptions() {
-  const selectedProvider = providerSelect.value;
-  let firstMatchingOption = null;
-
-  for (const option of modelSelect.options) {
-    const matchesProvider = option.dataset.provider === selectedProvider;
-    option.hidden = !matchesProvider;
-    option.disabled = !matchesProvider;
-
-    if (matchesProvider && firstMatchingOption === null) {
-      firstMatchingOption = option;
-    }
-  }
-
-  if (firstMatchingOption !== null) {
-    modelSelect.value = firstMatchingOption.value;
-  }
-}
-
 function setBusy(isBusy) {
   submitButton.disabled = isBusy;
   providerSelect.disabled = isBusy;
@@ -53,17 +254,8 @@ function setBusy(isBusy) {
   buttonProgress.hidden = !isBusy;
 }
 
-function createRequestId() {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `browser-${Date.now()}`;
-}
-
-function showError(message) {
-  formStatus.textContent = message;
-  formStatus.classList.add("error-message");
+function showStreamError(message) {
+  showFormError(formStatus, message);
   resultPanel.classList.remove("is-streaming");
 }
 
@@ -188,7 +380,9 @@ async function readSseResponse(response) {
   }
 }
 
-providerSelect.addEventListener("change", syncModelOptions);
+providerSelect.addEventListener("change", () => {
+  syncModelOptions(providerSelect, modelSelect);
+});
 
 promptInput.addEventListener("input", () => {
   promptCount.textContent = `${promptInput.value.length} / ${promptInput.maxLength}`;
@@ -203,7 +397,7 @@ form.addEventListener("submit", async (event) => {
 
   const prompt = promptInput.value.trim();
   if (!prompt) {
-    showError("Enter a prompt before generating a response.");
+    showStreamError("Enter a prompt before generating a response.");
     promptInput.focus();
     return;
   }
@@ -230,8 +424,7 @@ form.addEventListener("submit", async (event) => {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error?.message || "The request failed safely.");
+      throw new Error(await responseErrorMessage(response));
     }
 
     await readSseResponse(response);
@@ -243,7 +436,7 @@ form.addEventListener("submit", async (event) => {
     } else {
       const message =
         error instanceof Error ? error.message : "The request failed.";
-      showError(message);
+      showStreamError(message);
     }
   } finally {
     activeRequest = null;
@@ -251,4 +444,4 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-syncModelOptions();
+syncModelOptions(providerSelect, modelSelect);

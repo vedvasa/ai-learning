@@ -37,4 +37,4 @@ jobs:
         run: |
           uv sync --locked --no-dev --no-editable
           uv run --no-sync python -c \
-            "from app.main import app; assert app.title == 'PromptBench'"
+            "from app.main import app; assert app.title == 'KnowledgeDesk'"

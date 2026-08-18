@@ -38,6 +38,13 @@ PROVIDER_ERROR_RESPONSES = {
         message="The selected provider is temporarily unavailable.",
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     ),
+    ProviderErrorKind.INVALID_OUTPUT: ProviderErrorResponse(
+        code="provider_invalid_output",
+        message=(
+            "The selected provider did not return a valid structured result."
+        ),
+        status_code=status.HTTP_502_BAD_GATEWAY,
+    ),
     ProviderErrorKind.FAILURE: ProviderErrorResponse(
         code="provider_error",
         message="The selected provider request failed.",

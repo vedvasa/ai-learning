@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import AsyncGenerator, Literal, Protocol
+from typing import TYPE_CHECKING, AsyncGenerator, Literal, Protocol
+
+if TYPE_CHECKING:
+    from app.schemas.triage import SupportTicket, TicketTriage
 
 ProviderName = Literal["openai", "anthropic"]
 
@@ -10,6 +13,18 @@ ProviderName = Literal["openai", "anthropic"]
 @dataclass(frozen=True, slots=True)
 class GenerationResult:
     text: str
+    provider: ProviderName
+    model: str
+    latency_ms: float
+    input_tokens: int
+    output_tokens: int
+    finish_reason: str
+    provider_request_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TriageResult:
+    triage: TicketTriage
     provider: ProviderName
     model: str
     latency_ms: float
@@ -39,6 +54,7 @@ class ProviderErrorKind(StrEnum):
     TIMEOUT = "timeout"
     INVALID_REQUEST = "invalid_request"
     UNAVAILABLE = "unavailable"
+    INVALID_OUTPUT = "invalid_output"
     FAILURE = "failure"
 
 
@@ -61,6 +77,8 @@ class Provider(Protocol):
     async def generate(self, prompt: str) -> GenerationResult: ...
 
     def stream(self, prompt: str) -> ProviderStream: ...
+
+    async def triage(self, ticket: SupportTicket) -> TriageResult: ...
 
 
 class ProviderLookupError(Exception):

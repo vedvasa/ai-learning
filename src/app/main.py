@@ -7,13 +7,20 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.api.generate import router as generate_router
-from app.api.stream import router as stream_router
 from app.api.health import router as health_router
+from app.api.stream import router as stream_router
+from app.api.triage import router as triage_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handling
 from app.providers.base import ProviderRegistry
 from app.providers.registry import build_provider_registry
 from app.schemas.generation import MAX_PROMPT_CHARACTERS
+from app.schemas.triage import (
+    MAX_TICKET_BODY_CHARACTERS,
+    MAX_TICKET_ID_CHARACTERS,
+    MAX_TICKET_SUBJECT_CHARACTERS,
+    TicketChannel,
+)
 
 APP_DIRECTORY = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=APP_DIRECTORY / "templates")
@@ -28,7 +35,7 @@ def create_app(
         title=app_settings.app_name,
         version=app_settings.app_version,
         description=(
-            "A production-learning playground for comparing direct model providers."
+            "A production-learning support and research assistant."
         ),
     )
 
@@ -46,6 +53,7 @@ def create_app(
     app.include_router(health_router)
     app.include_router(generate_router)
     app.include_router(stream_router)
+    app.include_router(triage_router)
     app.mount(
         "/static",
         StaticFiles(directory=APP_DIRECTORY / "static"),
@@ -79,6 +87,15 @@ def create_app(
                 "default_provider": app_settings.llm_provider,
                 "max_prompt_characters": MAX_PROMPT_CHARACTERS,
                 "max_output_tokens": app_settings.llm_max_output_tokens,
+                "triage_max_output_tokens": (
+                    app_settings.triage_max_output_tokens
+                ),
+                "max_ticket_id_characters": MAX_TICKET_ID_CHARACTERS,
+                "max_ticket_subject_characters": (
+                    MAX_TICKET_SUBJECT_CHARACTERS
+                ),
+                "max_ticket_body_characters": MAX_TICKET_BODY_CHARACTERS,
+                "ticket_channels": tuple(channel.value for channel in TicketChannel),
             },
         )
 
