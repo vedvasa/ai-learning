@@ -6,8 +6,8 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 
 | Week | Release | Status | Live URL | Git tag | Key evaluation | Model spend | Main lesson |
 |---:|---|---|---|---|---|---:|---|
-| 1 | PromptBench | Complete | [Live](https://ai-learning-promptbench.onrender.com/) | Pending merge | 5/5 sample calls; safe 502 and recovery | $0.00070 measured | HTTP/SSE boundaries, direct SDKs, safe errors, deployment, and cold starts |
-| 2 | Ticket Triage API | Not started |  |  |  | $0.00 |  |
+| 1 | PromptBench | Complete | [Live](https://ai-learning-promptbench.onrender.com/) | [`v0.1.0`](https://github.com/vedvasa/ai-learning/tree/v0.1.0) | 5/5 sample calls; safe 502 and recovery | $0.00070 measured | HTTP/SSE boundaries, direct SDKs, safe errors, deployment, and cold starts |
+| 2 | Ticket Triage API | In progress |  |  | Strict contract and synthetic fixtures | $0.00 | Typed structured output and validation |
 | 3 | Citation Q&A | Not started |  |  |  | $0.00 |  |
 | 4 | RAG Quality Lab | Not started |  |  |  | $0.00 |  |
 | 5 | Support Action Agent | Not started |  |  |  | $0.00 |  |
@@ -28,7 +28,7 @@ Learning budget: **$_____**
 ### Week 1 — PromptBench
 
 - **Dates:** 2026-08-12 to 2026-08-15
-- **Release tag:** `v0.1.0` planned after the completion PR merges
+- **Release tag:** [`v0.1.0`](https://github.com/vedvasa/ai-learning/tree/v0.1.0)
 - **Live URL:** [ai-learning-promptbench.onrender.com](https://ai-learning-promptbench.onrender.com/)
 - **Deployment revision:** `b7857e751482`
 - **Schema/migration version:** Not applicable
