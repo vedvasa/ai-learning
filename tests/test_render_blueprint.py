@@ -67,6 +67,7 @@ def test_render_blueprint_keeps_learning_cost_limits() -> None:
     assert env_vars["LLM_MAX_OUTPUT_TOKENS"]["value"] == "64"
     assert env_vars["TRIAGE_MAX_OUTPUT_TOKENS"]["value"] == "256"
     assert env_vars["MAX_MODEL_COST_USD_PER_REQUEST"]["value"] == "0.05"
+    assert env_vars["USAGE_RECORDER_CAPACITY"]["value"] == "1000"
 
 
 def test_production_start_script_is_executable_and_binds_render_port() -> None:

@@ -137,9 +137,15 @@ from system instructions.
 
 This slice intentionally has no ticket database: request text is processed in
 memory, not persisted, and omitted from application logs. The six committed
-fixtures are fictional evaluation inputs rather than saved user tickets. Triage
-output has a separate 256-token default cap because the eight-field schema needs
-more room than PromptBench's intentionally small 64-token prose limit.
+fixtures are fictional evaluation inputs rather than saved user tickets. A
+bounded, process-local recorder keeps at most 1,000 safe triage usage events by
+default: request ID, operation, provider/model, total duration, successful token
+counts, attempt count, outcome, normalized error kind, and timestamp. Its schema
+cannot hold ticket text or model output, and no public endpoint exposes the
+records. The recorder is injected behind an async interface that a durable
+Postgres implementation will replace in Week 3. Triage output has a separate
+256-token default cap because the eight-field schema needs more room than
+PromptBench's intentionally small 64-token prose limit.
 
 Non-streaming generation and ticket triage use one application-owned retry
 policy. Provider SDK retries are disabled, so the service can report and bound
@@ -165,6 +171,8 @@ and the
 [Anthropic structured outputs guide](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
 See [ADR 0003](docs/decisions/0003-application-owned-retries.md) for retry
 classification, deadline, jitter, and streaming decisions.
+See [ADR 0004](docs/decisions/0004-in-memory-usage-recorder.md) for the usage
+event's privacy boundary, fail-open behavior, and process-local limitations.
 
 ## OpenAI connectivity check
 

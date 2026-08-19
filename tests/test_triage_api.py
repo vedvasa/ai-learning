@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import asdict
 
 from fastapi.testclient import TestClient
 
@@ -14,6 +15,11 @@ from app.providers.base import (
     TriageResult,
 )
 from app.schemas.triage import SupportTicket, TicketTriage
+from app.services.usage import (
+    InMemoryUsageRecorder,
+    UsageOutcome,
+    UsageRecorder,
+)
 
 
 class FakeTriageProvider:
@@ -84,6 +90,8 @@ def make_client(
     *,
     timeout_seconds: float = 1,
     max_attempts: int = 3,
+    usage_recorder: UsageRecorder | None = None,
+    raise_server_exceptions: bool = True,
 ) -> TestClient:
     providers = [] if provider is None else [provider]
     app = create_app(
@@ -92,8 +100,12 @@ def make_client(
             max_attempts=max_attempts,
         ),
         provider_registry=ProviderRegistry(providers),
+        usage_recorder=usage_recorder,
     )
-    return TestClient(app)
+    return TestClient(
+        app,
+        raise_server_exceptions=raise_server_exceptions,
+    )
 
 
 def triage_payload(**ticket_overrides: object) -> dict[str, object]:
@@ -113,9 +125,10 @@ def triage_payload(**ticket_overrides: object) -> dict[str, object]:
 
 def test_triage_returns_validated_result_and_safe_telemetry(caplog) -> None:
     provider = FakeTriageProvider()
+    recorder = InMemoryUsageRecorder(capacity=10)
 
     with caplog.at_level(logging.INFO, logger="app.api.triage"):
-        with make_client(provider) as client:
+        with make_client(provider, usage_recorder=recorder) as client:
             response = client.post(
                 "/api/triage",
                 json=triage_payload(),
@@ -158,6 +171,24 @@ def test_triage_returns_validated_result_and_safe_telemetry(caplog) -> None:
     assert "Duplicate charge contains private text" not in caplog.text
     assert "private customer detail" not in caplog.text
     assert "The customer reports a duplicate charge" not in caplog.text
+
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    usage = records[0]
+    assert usage.request_id == "triage-request-123"
+    assert usage.operation.value == "triage"
+    assert usage.provider == "openai"
+    assert usage.model == "gpt-test"
+    assert usage.outcome is UsageOutcome.SUCCESS
+    assert usage.duration_ms >= 0
+    assert usage.input_tokens == 82
+    assert usage.output_tokens == 64
+    assert usage.attempt_count == 1
+    assert usage.error_kind is None
+    assert "ticket_id" not in asdict(usage)
+    assert "subject" not in asdict(usage)
+    assert "body" not in asdict(usage)
+    assert "private" not in repr(usage)
 
 
 def test_triage_rejects_invalid_ticket_before_provider_call() -> None:
@@ -205,8 +236,9 @@ def test_triage_maps_invalid_provider_output_to_safe_error() -> None:
             provider_request_id="invalid-provider-output-123",
         )
     )
+    recorder = InMemoryUsageRecorder(capacity=10)
 
-    with make_client(provider) as client:
+    with make_client(provider, usage_recorder=recorder) as client:
         response = client.post(
             "/api/triage",
             json=triage_payload(),
@@ -225,6 +257,13 @@ def test_triage_maps_invalid_provider_output_to_safe_error() -> None:
     }
     assert "invalid-provider-output-123" not in response.text
     assert len(provider.tickets) == 1
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    assert records[0].outcome is UsageOutcome.FAILURE
+    assert records[0].error_kind is ProviderErrorKind.INVALID_OUTPUT
+    assert records[0].input_tokens is None
+    assert records[0].output_tokens is None
+    assert records[0].attempt_count == 1
 
 
 def test_triage_retries_rate_limits_then_returns_validated_result(
@@ -236,9 +275,10 @@ def test_triage_retries_rate_limits_then_returns_validated_result(
             ProviderError(ProviderErrorKind.RATE_LIMIT),
         ]
     )
+    recorder = InMemoryUsageRecorder(capacity=10)
 
     with caplog.at_level(logging.INFO, logger="app.api.triage"):
-        with make_client(provider) as client:
+        with make_client(provider, usage_recorder=recorder) as client:
             response = client.post("/api/triage", json=triage_payload())
 
     assert response.status_code == 200
@@ -247,15 +287,20 @@ def test_triage_retries_rate_limits_then_returns_validated_result(
     assert caplog.text.count("triage_retry_scheduled") == 2
     assert "attempt_count=3" in caplog.text
     assert "private customer detail" not in caplog.text
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    assert records[0].outcome is UsageOutcome.SUCCESS
+    assert records[0].attempt_count == 3
 
 
 def test_triage_stops_after_bounded_transient_attempts(caplog) -> None:
     provider = FakeTriageProvider(
         error=ProviderError(ProviderErrorKind.UNAVAILABLE)
     )
+    recorder = InMemoryUsageRecorder(capacity=10)
 
     with caplog.at_level(logging.INFO, logger="app.api.triage"):
-        with make_client(provider) as client:
+        with make_client(provider, usage_recorder=recorder) as client:
             response = client.post("/api/triage", json=triage_payload())
 
     assert response.status_code == 503
@@ -263,13 +308,75 @@ def test_triage_stops_after_bounded_transient_attempts(caplog) -> None:
     assert len(provider.tickets) == 3
     assert caplog.text.count("triage_retry_scheduled") == 2
     assert "attempt_count=3" in caplog.text
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    assert records[0].outcome is UsageOutcome.FAILURE
+    assert records[0].error_kind is ProviderErrorKind.UNAVAILABLE
+    assert records[0].attempt_count == 3
 
 
 def test_triage_applies_total_request_timeout() -> None:
     provider = FakeTriageProvider(delay_seconds=0.05)
+    recorder = InMemoryUsageRecorder(capacity=10)
 
-    with make_client(provider, timeout_seconds=0.001) as client:
+    with make_client(
+        provider,
+        timeout_seconds=0.001,
+        usage_recorder=recorder,
+    ) as client:
         response = client.post("/api/triage", json=triage_payload())
 
     assert response.status_code == 504
     assert response.json()["error"]["code"] == "provider_timeout"
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    assert records[0].outcome is UsageOutcome.FAILURE
+    assert records[0].error_kind is ProviderErrorKind.TIMEOUT
+    assert records[0].attempt_count == 1
+
+
+def test_usage_recorder_failure_does_not_break_triage_or_leak_error(caplog) -> None:
+    class FailingUsageRecorder:
+        async def record(self, _usage) -> None:
+            raise RuntimeError("private recorder failure detail")
+
+    with caplog.at_level(logging.ERROR, logger="app.services.usage"):
+        with make_client(
+            FakeTriageProvider(),
+            usage_recorder=FailingUsageRecorder(),
+        ) as client:
+            response = client.post(
+                "/api/triage",
+                json=triage_payload(),
+                headers={"X-Request-ID": "recorder-failure-request"},
+            )
+
+    assert response.status_code == 200
+    assert "usage_record_failed" in caplog.text
+    assert "request_id=recorder-failure-request" in caplog.text
+    assert "private recorder failure detail" not in caplog.text
+
+
+def test_unexpected_provider_failure_is_recorded_without_details() -> None:
+    recorder = InMemoryUsageRecorder(capacity=10)
+
+    with make_client(
+        FakeTriageProvider(error=RuntimeError("private provider detail")),
+        usage_recorder=recorder,
+        raise_server_exceptions=False,
+    ) as client:
+        response = client.post(
+            "/api/triage",
+            json=triage_payload(),
+            headers={"X-Request-ID": "unexpected-failure-request"},
+        )
+
+    assert response.status_code == 500
+    assert "private provider detail" not in response.text
+    records = asyncio.run(recorder.snapshot())
+    assert len(records) == 1
+    assert records[0].request_id == "unexpected-failure-request"
+    assert records[0].outcome is UsageOutcome.FAILURE
+    assert records[0].error_kind is ProviderErrorKind.FAILURE
+    assert records[0].input_tokens is None
+    assert records[0].output_tokens is None

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
+from time import perf_counter
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.api.dependencies import get_provider_registry
+from app.api.dependencies import get_provider_registry, get_usage_recorder
 from app.api.provider_errors import PROVIDER_ERROR_RESPONSES
 from app.core.config import Settings, get_settings
 from app.core.errors import ApplicationError, ErrorResponse, request_id_for
@@ -20,6 +21,13 @@ from app.services.retry import (
     RetryDeadlineExceeded,
     RetryPolicy,
     call_with_retry,
+)
+from app.services.usage import (
+    UsageOperation,
+    UsageOutcome,
+    UsageRecord,
+    UsageRecorder,
+    record_usage_safely,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,6 +51,7 @@ async def triage_ticket(
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
     registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
+    usage_recorder: Annotated[UsageRecorder, Depends(get_usage_recorder)],
 ) -> TicketTriageResponse:
     request_id = request_id_for(request)
 
@@ -80,6 +89,8 @@ async def triage_ticket(
             error.provider_request_id,
         )
 
+    started_at = perf_counter()
+
     try:
         outcome = await call_with_retry(
             lambda: provider.triage(payload.ticket),
@@ -89,6 +100,21 @@ async def triage_ticket(
         )
         result = outcome.value
     except RetryDeadlineExceeded as error:
+        await record_usage_safely(
+            usage_recorder,
+            UsageRecord(
+                request_id=request_id,
+                operation=UsageOperation.TRIAGE,
+                provider=payload.provider,
+                model=payload.model,
+                outcome=UsageOutcome.FAILURE,
+                duration_ms=(perf_counter() - started_at) * 1_000,
+                input_tokens=None,
+                output_tokens=None,
+                attempt_count=error.attempt_count,
+                error_kind=ProviderErrorKind.TIMEOUT,
+            ),
+        )
         logger.warning(
             "triage_failed request_id=%s ticket_id=%s provider=%s model=%s "
             "error_kind=total_timeout attempt_count=%d",
@@ -105,6 +131,21 @@ async def triage_ticket(
             status_code=timeout_response.status_code,
         ) from error
     except ProviderError as error:
+        await record_usage_safely(
+            usage_recorder,
+            UsageRecord(
+                request_id=request_id,
+                operation=UsageOperation.TRIAGE,
+                provider=payload.provider,
+                model=payload.model,
+                outcome=UsageOutcome.FAILURE,
+                duration_ms=(perf_counter() - started_at) * 1_000,
+                input_tokens=None,
+                output_tokens=None,
+                attempt_count=error.attempt_count,
+                error_kind=error.kind,
+            ),
+        )
         logger.warning(
             "triage_failed request_id=%s ticket_id=%s provider=%s model=%s "
             "error_kind=%s attempt_count=%d provider_request_id=%s",
@@ -122,6 +163,38 @@ async def triage_ticket(
             message=mapped_error.message,
             status_code=mapped_error.status_code,
         ) from error
+    except Exception:
+        await record_usage_safely(
+            usage_recorder,
+            UsageRecord(
+                request_id=request_id,
+                operation=UsageOperation.TRIAGE,
+                provider=payload.provider,
+                model=payload.model,
+                outcome=UsageOutcome.FAILURE,
+                duration_ms=(perf_counter() - started_at) * 1_000,
+                input_tokens=None,
+                output_tokens=None,
+                attempt_count=1,
+                error_kind=ProviderErrorKind.FAILURE,
+            ),
+        )
+        raise
+
+    await record_usage_safely(
+        usage_recorder,
+        UsageRecord(
+            request_id=request_id,
+            operation=UsageOperation.TRIAGE,
+            provider=result.provider,
+            model=result.model,
+            outcome=UsageOutcome.SUCCESS,
+            duration_ms=(perf_counter() - started_at) * 1_000,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            attempt_count=outcome.attempt_count,
+        ),
+    )
 
     logger.info(
         "triage_completed request_id=%s ticket_id=%s provider=%s model=%s "
