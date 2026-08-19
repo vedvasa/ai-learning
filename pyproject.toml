@@ -21,6 +21,7 @@ dependencies = [
 ai-learning = "ai_learning:main"
 anthropic-check = "ai_learning.anthropic_check:main"
 openai-check = "ai_learning.openai_check:main"
+triage-batch = "ai_learning.triage_batch:main"
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]

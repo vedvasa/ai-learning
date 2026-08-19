@@ -174,6 +174,44 @@ classification, deadline, jitter, and streaming decisions.
 See [ADR 0004](docs/decisions/0004-in-memory-usage-recorder.md) for the usage
 event's privacy boundary, fail-open behavior, and process-local limitations.
 
+### Run the ticket evaluation batch
+
+Validate and hash all 30 fictional cases without constructing a provider client
+or making a paid call:
+
+```bash
+uv run --no-sync triage-batch --validate-only
+```
+
+An actual run requires explicit cost acknowledgement. It evaluates six cases
+serially by default and writes an ignored aggregate report to
+`artifacts/triage-evaluation.json`:
+
+```bash
+uv run --no-sync triage-batch \
+  --provider openai \
+  --max-cases 6 \
+  --concurrency 1 \
+  --allow-paid-calls
+```
+
+Use `--max-cases 30` for the full dataset. To estimate run cost and cost per 100
+tickets, check the selected model's current pricing and supply both
+`--input-price-per-million-usd` and `--output-price-per-million-usd`. Pricing is
+not hardcoded because it changes independently of application code.
+
+The report contains the dataset hash, provider/model, configuration, schema-valid
+response rate, category and priority accuracy, human-review recall, p50/p95
+successful-call duration, token totals and means, attempts, normalized failure
+counts, and optional cost estimates. It contains no fixture or generated text.
+Failed cases count as incorrect, and cost is marked as a lower bound when failed
+or retried attempts have unknown usage. Exit code 0 means every case returned
+schema-valid output, 1 means at least one provider call failed, and 2 means the
+input or command configuration was rejected.
+
+See [ADR 0005](docs/decisions/0005-local-triage-batch-evaluation.md) for the
+dataset, metric, privacy, cost, and exit-code decisions.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

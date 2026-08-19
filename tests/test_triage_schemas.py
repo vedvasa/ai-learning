@@ -15,7 +15,10 @@ from app.schemas.triage import (
 )
 
 FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "tickets" / "starter_tickets.json"
+    Path(__file__).parents[1]
+    / "datasets"
+    / "ticket-triage"
+    / "starter_tickets.json"
 )
 
 
