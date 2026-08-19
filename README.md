@@ -141,6 +141,20 @@ fixtures are fictional evaluation inputs rather than saved user tickets. Triage
 output has a separate 256-token default cap because the eight-field schema needs
 more room than PromptBench's intentionally small 64-token prose limit.
 
+Non-streaming generation and ticket triage use one application-owned retry
+policy. Provider SDK retries are disabled, so the service can report and bound
+every attempt itself. The default policy allows three total attempts, applies
+exponential backoff with bounded jitter only to rate limits, provider timeouts,
+connection/unavailability errors, `408`, `409`, and `5xx` responses, and keeps
+calls plus backoff inside the existing 30-second total deadline. Authentication,
+invalid requests, invalid structured output, cancellations, and unknown failures
+are not retried. Successful non-streaming responses include `attempt_count`, and
+retry logs omit prompt and ticket text.
+
+Streaming responses are deliberately not replayed. Once SSE fragments may have
+reached a browser, automatically starting a second provider request could
+duplicate or splice output.
+
 See [ADR 0001](docs/decisions/0001-ticket-triage-contract.md) for the contract
 boundaries and why Jira integration is intentionally outside this week's scope.
 See [ADR 0002](docs/decisions/0002-native-structured-output.md) for the direct
@@ -149,6 +163,8 @@ documented by the
 [OpenAI structured outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs)
 and the
 [Anthropic structured outputs guide](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+See [ADR 0003](docs/decisions/0003-application-owned-retries.md) for retry
+classification, deadline, jitter, and streaming decisions.
 
 ## OpenAI connectivity check
 

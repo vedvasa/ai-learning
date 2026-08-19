@@ -58,6 +58,7 @@ def make_settings(*, timeout_seconds: float = 1) -> Settings:
         openai_model="gpt-test",
         anthropic_model="claude-test",
         llm_timeout_seconds=timeout_seconds,
+        llm_retry_base_delay_seconds=0,
     )
 
 
@@ -114,6 +115,7 @@ def test_generate_returns_provider_neutral_response_and_request_id(
         "output_tokens": 5,
         "finish_reason": "completed",
         "provider_request_id": "provider-request-123",
+        "attempt_count": 1,
     }
     assert provider.prompts == [secret_prompt]
     assert "generation_completed" in caplog.text
@@ -213,6 +215,7 @@ def test_generate_maps_provider_failure_without_leaking_sdk_details() -> None:
         }
     }
     assert "provider-failure-123" not in response.text
+    assert len(provider.prompts) == 3
 
 
 def test_generate_applies_total_request_timeout() -> None:

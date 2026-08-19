@@ -83,6 +83,7 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     assert "KnowledgeDesk" in page.text
     assert "Structured triage online" in page.text
     assert 'id="triage-form"' in page.text
+    assert 'id="triage-metric-attempt-count"' in page.text
     assert 'name="ticket_id"' in page.text
     assert 'name="subject"' in page.text
     assert 'name="channel"' in page.text
@@ -113,3 +114,17 @@ def test_settings_reject_nonpositive_limits() -> None:
             llm_max_output_tokens=0,
             triage_max_output_tokens=0,
         )
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"llm_max_attempts": 6},
+        {"llm_retry_base_delay_seconds": -0.1},
+        {"llm_retry_max_delay_seconds": 61},
+        {"llm_retry_jitter_ratio": 1.1},
+    ],
+)
+def test_settings_reject_unsafe_retry_bounds(override: dict) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **override)

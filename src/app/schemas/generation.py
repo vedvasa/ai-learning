@@ -30,6 +30,7 @@ class GenerationResponse(BaseModel):
     output_tokens: int
     finish_reason: str
     provider_request_id: str | None
+    attempt_count: int = Field(ge=1)
 
 
 class StreamStart(BaseModel):
