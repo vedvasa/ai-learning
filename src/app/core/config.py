@@ -9,6 +9,7 @@ PositiveInt = Annotated[int, Field(gt=0)]
 RetryAttempts = Annotated[int, Field(ge=1, le=5)]
 RetryDelay = Annotated[float, Field(ge=0, le=60)]
 RetryJitter = Annotated[float, Field(ge=0, le=1)]
+UsageRecorderCapacity = Annotated[int, Field(ge=1, le=10_000)]
 
 
 class Settings(BaseSettings):
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
     llm_max_output_tokens: PositiveInt = 64
     triage_max_output_tokens: PositiveInt = 256
     max_model_cost_usd_per_request: PositiveFloat = 0.05
+    usage_recorder_capacity: UsageRecorderCapacity = 1_000
 
     openai_api_key: SecretStr | None = None
     openai_model: str = "gpt-5.6-luna"

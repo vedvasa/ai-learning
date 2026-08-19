@@ -128,3 +128,9 @@ def test_settings_reject_nonpositive_limits() -> None:
 def test_settings_reject_unsafe_retry_bounds(override: dict) -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, **override)
+
+
+@pytest.mark.parametrize("capacity", [0, 10_001])
+def test_settings_rejects_unsafe_usage_recorder_capacity(capacity: int) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, usage_recorder_capacity=capacity)

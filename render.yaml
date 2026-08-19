@@ -35,6 +35,8 @@ services:
         value: "256"
       - key: MAX_MODEL_COST_USD_PER_REQUEST
         value: "0.05"
+      - key: USAGE_RECORDER_CAPACITY
+        value: "1000"
       - key: OPENAI_MODEL
         value: gpt-5.6-luna
       - key: ANTHROPIC_MODEL

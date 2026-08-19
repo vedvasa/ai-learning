@@ -21,6 +21,7 @@ from app.schemas.triage import (
     MAX_TICKET_SUBJECT_CHARACTERS,
     TicketChannel,
 )
+from app.services.usage import InMemoryUsageRecorder, UsageRecorder
 
 APP_DIRECTORY = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=APP_DIRECTORY / "templates")
@@ -29,6 +30,7 @@ templates = Jinja2Templates(directory=APP_DIRECTORY / "templates")
 def create_app(
     settings: Settings | None = None,
     provider_registry: ProviderRegistry | None = None,
+    usage_recorder: UsageRecorder | None = None,
 ) -> FastAPI:
     app_settings = settings or get_settings()
     app = FastAPI(
@@ -44,6 +46,13 @@ def create_app(
         provider_registry
         if provider_registry is not None
         else build_provider_registry(app_settings)
+    )
+    app.state.usage_recorder = (
+        usage_recorder
+        if usage_recorder is not None
+        else InMemoryUsageRecorder(
+            capacity=app_settings.usage_recorder_capacity,
+        )
     )
 
     if settings is not None:
