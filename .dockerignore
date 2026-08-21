@@ -1,0 +1,16 @@
+**
+
+!Dockerfile
+!.dockerignore
+!README.md
+!pyproject.toml
+!uv.lock
+
+!src/
+!src/**
+
+!datasets/
+!datasets/**
+
+!scripts/
+!scripts/start-container.sh
