@@ -212,6 +212,43 @@ input or command configuration was rejected.
 See [ADR 0005](docs/decisions/0005-local-triage-batch-evaluation.md) for the
 dataset, metric, privacy, cost, and exit-code decisions.
 
+### Build and test the production container
+
+With Docker Desktop running, build the same production target used by CI:
+
+```bash
+docker build --tag ai-learning:local .
+sh scripts/smoke-container.sh ai-learning:local
+```
+
+The multi-stage image pins Python 3.14.7 and uv 0.12.3 by digest, installs only
+locked production dependencies, and runs as UID/GID `10001:10001`. Its final
+stage contains the installed virtual environment, fictional evaluation dataset,
+and startup script; it excludes uv, source files, tests, Git history, local
+environments, and secrets. The local ARM64 image measured about 64 MB; size can
+differ by architecture.
+
+The smoke test does not need provider keys and makes no model calls. It expects
+`/health/live` to succeed and `/health/ready` to return HTTP 503 because no
+provider secrets were injected. It also verifies the non-root/minimal runtime,
+offline batch validation, homepage, and static JavaScript.
+
+To exercise the image manually with your ignored local provider configuration:
+
+```bash
+docker run --rm \
+  --env-file .env \
+  --publish 8080:8080 \
+  ai-learning:local
+```
+
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080). Secrets are injected
+when the container starts and are never build arguments or image layers. PR 17
+will deploy this exact container contract to Cloud Run.
+
+See [ADR 0006](docs/decisions/0006-pinned-nonroot-container.md) for the image,
+runtime-user, build-context, secret, health-check, and CI decisions.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
