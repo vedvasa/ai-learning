@@ -1,0 +1,314 @@
+[
+  {
+    "ticket": {
+      "ticket_id": "TKT-007",
+      "subject": "MFA code never arrives",
+      "body": "I can enter my password, but the email verification code has not arrived after several attempts.",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "account_access",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-008",
+      "subject": "Company SSO blocks the entire support team",
+      "body": "Every support agent is redirected back to the login page, so the team cannot access the dashboard.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "account_access",
+      "priority": "high",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-009",
+      "subject": "Cannot verify my new email address",
+      "body": "I changed my work email and the verification link reports that it has already expired.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "account_access",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-010",
+      "subject": "Refund the unused seat charge",
+      "body": "We removed a seat before renewal, but it still appears on the invoice. Please refund that charge.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "billing",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-011",
+      "subject": "Need a copy of last month's invoice",
+      "body": "Where can I download the PDF invoice for the previous billing period?",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "billing",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-012",
+      "subject": "Annual plan renewed unexpectedly",
+      "body": "Our annual subscription renewed this morning even though we intended to stop it. Please reverse the renewal.",
+      "channel": "phone"
+    },
+    "expected": {
+      "category": "billing",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-013",
+      "subject": "Cancel a trial before it converts",
+      "body": "Please cancel the workspace trial today so that it does not convert to a paid plan.",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "cancellation",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-014",
+      "subject": "Close our duplicate workspace",
+      "body": "We created a second workspace by mistake and want that workspace and its subscription closed.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "cancellation",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-015",
+      "subject": "End the add-on subscription",
+      "body": "Remove the analytics add-on at the end of this month while keeping the main plan active.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "cancellation",
+      "priority": "medium",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-016",
+      "subject": "Add keyboard shortcuts for search",
+      "body": "A shortcut to focus and clear global search would make repeated lookups faster.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "feature_request",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-017",
+      "subject": "Export charts as SVG",
+      "body": "Please add an SVG export option so charts remain sharp in presentations.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "feature_request",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-018",
+      "subject": "Weekly digest scheduling",
+      "body": "It would be helpful to choose the weekday and timezone for the weekly activity digest.",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "feature_request",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-019",
+      "subject": "Production API key posted publicly",
+      "body": "A production API credential was accidentally included in a public code snippet and may have been copied.",
+      "channel": "api"
+    },
+    "expected": {
+      "category": "security",
+      "priority": "urgent",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-020",
+      "subject": "Unrecognized login followed by data export",
+      "body": "The audit log shows a login from an unknown location and a full export immediately afterward.",
+      "channel": "phone"
+    },
+    "expected": {
+      "category": "security",
+      "priority": "urgent",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-021",
+      "subject": "Security researcher reports authorization bypass",
+      "body": "A researcher says a user can view another workspace's project name by changing an identifier.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "security",
+      "priority": "high",
+      "requires_human_review": true
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-022",
+      "subject": "European users cannot load dashboards",
+      "body": "Dashboard requests from our European offices have failed for thirty minutes, while other regions still work.",
+      "channel": "api"
+    },
+    "expected": {
+      "category": "technical_issue",
+      "priority": "high",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-023",
+      "subject": "Mobile app crashes while attaching a photo",
+      "body": "The current mobile app closes whenever I select a large photo for a new ticket.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "technical_issue",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-024",
+      "subject": "Webhook deliveries delayed",
+      "body": "Webhook events are arriving about fifteen minutes after the matching dashboard activity.",
+      "channel": "api"
+    },
+    "expected": {
+      "category": "technical_issue",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-025",
+      "subject": "CRM synchronization stopped for all records",
+      "body": "No contacts have synchronized to our CRM since this morning and every retry fails.",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "technical_issue",
+      "priority": "high",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-026",
+      "subject": "Question about nonprofit pricing",
+      "body": "Do you offer a standard discount for registered nonprofit organizations?",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "other",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-027",
+      "subject": "Thanks for the improved activity page",
+      "body": "The new activity filters saved our team a lot of time this week. Thank you.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "other",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-028",
+      "subject": "Procurement needs a vendor questionnaire",
+      "body": "Our procurement team needs your standard vendor questionnaire before we can purchase a plan.",
+      "channel": "email"
+    },
+    "expected": {
+      "category": "other",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-029",
+      "subject": "Typo in the import documentation",
+      "body": "The CSV import guide refers to a column as account-name in one example and account_name in another.",
+      "channel": "web"
+    },
+    "expected": {
+      "category": "other",
+      "priority": "low",
+      "requires_human_review": false
+    }
+  },
+  {
+    "ticket": {
+      "ticket_id": "TKT-030",
+      "subject": "Request for an accessibility conformance report",
+      "body": "Where can our accessibility team obtain the latest conformance report for the web application?",
+      "channel": "chat"
+    },
+    "expected": {
+      "category": "other",
+      "priority": "medium",
+      "requires_human_review": false
+    }
+  }
+]
