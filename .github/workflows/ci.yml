@@ -35,6 +35,8 @@ jobs:
           sh -n scripts/start-production.sh
           sh -n scripts/start-container.sh
           sh -n scripts/smoke-container.sh
+          sh -n scripts/deploy-cloud-run.sh
+          sh -n scripts/smoke-cloud-run.sh
 
       - name: Verify production dependency installation
         run: |

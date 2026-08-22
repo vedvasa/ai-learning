@@ -249,6 +249,28 @@ will deploy this exact container contract to Cloud Run.
 See [ADR 0006](docs/decisions/0006-pinned-nonroot-container.md) for the image,
 runtime-user, build-context, secret, health-check, and CI decisions.
 
+### Release the container to Cloud Run
+
+The Cloud Run release uses Cloud Build and Artifact Registry, then deploys the
+resolved image digest as a zero-traffic tagged candidate. A provider-free public
+smoke test must pass before the candidate receives service traffic. Runtime
+secrets come from explicit Secret Manager versions through a dedicated
+least-privilege service account.
+
+From a clean commit with the `ai-learning` gcloud configuration active:
+
+```bash
+GCP_PROJECT_ID=ai-learning-ved-2026 \
+  sh scripts/deploy-cloud-run.sh
+```
+
+The release uses request-based billing, scales from zero to at most one
+instance, and does not make paid model calls. Render remains the Week 1 fallback
+while Cloud Run becomes the container deployment target. See the
+[Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md) and
+[ADR 0007](docs/decisions/0007-staged-cloud-run-release.md) for setup, rollout,
+cost controls, evidence, secret rotation, and rollback.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

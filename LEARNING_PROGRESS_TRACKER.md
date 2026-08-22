@@ -7,7 +7,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 | Week | Release | Status | Live URL | Git tag | Key evaluation | Model spend | Main lesson |
 |---:|---|---|---|---|---|---:|---|
 | 1 | PromptBench | Complete | [Live](https://ai-learning-promptbench.onrender.com/) | [`v0.1.0`](https://github.com/vedvasa/ai-learning/tree/v0.1.0) | 5/5 sample calls; safe 502 and recovery | $0.00070 measured | HTTP/SSE boundaries, direct SDKs, safe errors, deployment, and cold starts |
-| 2 | Ticket Triage API | In progress |  |  | 128 deterministic tests; local container build and smoke pass | $0.00 | Typed output, guarded evaluation, and pinned non-root container delivery |
+| 2 | Ticket Triage API | In progress |  |  | 135 deterministic tests; local container build and smoke pass | $0.00 | Typed output, guarded evaluation, and staged Cloud Run container delivery |
 | 3 | Citation Q&A | Not started |  |  |  | $0.00 |  |
 | 4 | RAG Quality Lab | Not started |  |  |  | $0.00 |  |
 | 5 | Support Action Agent | Not started |  |  |  | $0.00 |  |
