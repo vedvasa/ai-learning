@@ -87,6 +87,21 @@ The command prints the service URL, candidate URL, revision, image digest, and
 the exact rollback command when a previous serving revision exists. After the
 bootstrap release, a failed candidate smoke test exits before traffic changes.
 
+## Verified bootstrap release
+
+The first release completed on August 21, 2026:
+
+- live service: [ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/);
+- application commit: `1df717f07ab34dd76130907886fbad294f3acce3`;
+- Cloud Build: `673abc74-4452-4ab2-80d2-8daf79c34dd4` (`SUCCESS`);
+- Cloud Run revision: `ai-learning-git-1df717f07ab3`;
+- image digest: `sha256:c5ab8adad4fe0bec167164176251c7074be27330aa0c01c0fa83c2db75a71800`;
+- traffic: 100% to the verified revision; and
+- provider model calls: zero during build and smoke verification.
+
+See the [Week 2 deployment evidence](evidence/week-2/README.md) for the public
+checks, configuration assertions, and bootstrap limitation.
+
 ## Runtime and cost controls
 
 The release explicitly configures:

@@ -244,7 +244,7 @@ docker run --rm \
 
 Then open [http://127.0.0.1:8080](http://127.0.0.1:8080). Secrets are injected
 when the container starts and are never build arguments or image layers. PR 17
-will deploy this exact container contract to Cloud Run.
+deploys this exact container contract to Cloud Run.
 
 See [ADR 0006](docs/decisions/0006-pinned-nonroot-container.md) for the image,
 runtime-user, build-context, secret, health-check, and CI decisions.
@@ -270,6 +270,12 @@ while Cloud Run becomes the container deployment target. See the
 [Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md) and
 [ADR 0007](docs/decisions/0007-staged-cloud-run-release.md) for setup, rollout,
 cost controls, evidence, secret rotation, and rollback.
+
+The PR 17 bootstrap release is live at
+[ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/).
+Its Cloud Build, immutable image digest, runtime controls, public smoke test, and
+log-hygiene check are recorded in the
+[Week 2 deployment evidence](docs/evidence/week-2/README.md).
 
 ## OpenAI connectivity check
 
