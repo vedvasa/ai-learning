@@ -7,7 +7,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 | Week | Release | Status | Live URL | Git tag | Key evaluation | Model spend | Main lesson |
 |---:|---|---|---|---|---|---:|---|
 | 1 | PromptBench | Complete | [Live](https://ai-learning-promptbench.onrender.com/) | [`v0.1.0`](https://github.com/vedvasa/ai-learning/tree/v0.1.0) | 5/5 sample calls; safe 502 and recovery | $0.00070 measured | HTTP/SSE boundaries, direct SDKs, safe errors, deployment, and cold starts |
-| 2 | Ticket Triage API | In progress | [Live](https://ai-learning-3y5vyfqynq-uw.a.run.app/) |  | 136 tests; corrected smoke, browser acceptance, and log hygiene pass | $0.00 | Typed output, guarded evaluation, staged recovery, and browser-level verification |
+| 2 | Ticket Triage API | Complete | [Live](https://ai-learning-3y5vyfqynq-uw.a.run.app/) | [`v0.2.0`](https://github.com/vedvasa/ai-learning/tree/v0.2.0) | 136 tests; 2/2 deployed calls; schema-valid but policy-label disagreement | $0.001634 measured | Typed output, guarded evaluation, staged recovery, and semantic evaluation |
 | 3 | Citation Q&A | Not started |  |  |  | $0.00 |  |
 | 4 | RAG Quality Lab | Not started |  |  |  | $0.00 |  |
 | 5 | Support Action Agent | Not started |  |  |  | $0.00 |  |
@@ -17,7 +17,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 | 9 | Operated AI Service | Not started |  |  |  | $0.00 |  |
 | 10 | Capstone release | Not started |  |  |  | $0.00 |  |
 
-Total model spend: **At least $0.00070 measured**
+Total model spend: **At least $0.00234 measured**
 
 Cloud spend: **Not yet reconciled; budget alert and free-trial/free-tier guardrails are active**
 
@@ -130,6 +130,105 @@ error translation, telemetry, deployment, and recovery.
 Week 2 should establish reliable structured model output and validation before
 adding persistence or retrieval.
 
+### Week 2 — Ticket Triage API
+
+- **Dates:** 2026-08-17 to 2026-08-21
+- **Release tag:** [`v0.2.0`](https://github.com/vedvasa/ai-learning/tree/v0.2.0)
+- **Live URL:** [ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/)
+- **Deployment revision:** `ai-learning-git-0a9e55479ea2`
+- **Schema/migration version:** Strict `TicketTriage` Pydantic contract; no database migration
+- **Prompt/evaluation dataset version:** 30 fictional cases, SHA-256 `334f962322f5845b23c18c19e4ae5e7b83682f723818512d40d8d7a104a52c63`
+
+#### Intended outcome
+
+A user can submit a fictional support ticket through either provider and receive
+one validated, provider-neutral classification contract from the deployed
+browser application.
+
+#### Architecture change
+
+Added native structured-output adapters, fail-closed Pydantic validation,
+application-owned bounded retries, privacy-safe in-memory usage telemetry, a
+guarded 30-case evaluation command, a pinned non-root container, and staged
+Cloud Run delivery through Cloud Build, Artifact Registry, Secret Manager, and a
+dedicated runtime identity.
+
+#### Evidence
+
+- CI runs: [PR #17](https://github.com/vedvasa/ai-learning/actions/runs/32543840189) and
+  [PR #18](https://github.com/vedvasa/ai-learning/actions/runs/32544540776)
+- Test summary: 136 deterministic tests passed without provider credentials
+- Evaluation report: [Week 2 evidence](docs/evidence/week-2/README.md)
+- Dataset validation: 30/30 fictional cases; hash recorded above
+- Deployment: corrected immutable revision at 100% traffic with the failed
+  bootstrap revision retained at 0%
+
+#### Quality and operations
+
+| Signal | Result | Target | Pass? |
+|---|---:|---:|---|
+| Unit/integration tests | 136/136 | All pass | Yes |
+| Deployed functional calls | 2/2 successful; one attempt each | 2/2 | Yes |
+| Schema validity | 2/2 responses passed the shared contract | 100% | Yes |
+| Semantic agreement | Category and review flag agreed; priority and sentiment disagreed | Baseline only | — |
+| Observed latency | 4.49 s and 4.88 s | Baseline only | — |
+| Estimated cost per task | $0.0001918 OpenAI; $0.0014420 Anthropic | At most $0.01 | Yes |
+
+Two calls cannot establish accuracy, latency percentiles, or an SLO. The
+disagreement is recorded as evidence that structured output and high confidence
+do not establish semantic correctness.
+
+#### Cost
+
+| Provider/service | Calls or usage | Estimated cost |
+|---|---:|---:|
+| OpenAI | 1 deployed acceptance call; 425 input / 89 output tokens | $0.0001918 |
+| Anthropic | 1 deployed acceptance call; 917 input / 105 output tokens | $0.0014420 |
+| Embeddings | 0 | $0.00 |
+| Web/search/tools | 0 | $0.00 |
+| Cloud | Free trial/free-tier guardrails; invoice not reconciled | Not claimed |
+| **Measured model total** | **2 calls** | **$0.0016338** |
+
+#### Failure drill
+
+The first Cloud Run bootstrap generated absolute HTTP asset URLs on an HTTPS
+page, so the browser blocked CSS and JavaScript even though endpoint smoke checks
+passed. Browser acceptance exposed the gap. Root-relative assets and a stronger
+smoke gate fixed the failure, and the user explicitly deployed the corrected
+revision. An actual traffic rollback is deferred until two known-good application
+revisions exist.
+
+#### Security/privacy check
+
+- Provider keys remained in versioned Secret Manager references and never
+  entered Git, the image, Cloud Build arguments, or browser code.
+- Ticket text and model output were processed in memory and omitted from logs and
+  usage records.
+- This evidence omits request IDs, provider IDs, ticket identifiers, ticket text,
+  generated summaries, actions, and rationales.
+- The public learning service remains unauthenticated and has no rate limiting.
+
+#### What I learned
+
+Production structured output has two separate quality gates. Schema validation
+makes data safe for application code, while labeled evaluation and policy rules
+are still needed to decide whether the data is correct.
+
+#### Known limitations
+
+- Two live calls are a functional check, not a statistically useful evaluation.
+- The full 30-case paid provider comparison has not been run.
+- Usage telemetry is process-local and disappears when the instance stops.
+- The service has no authentication, rate limit, durable database, tenant
+  isolation, or availability guarantee.
+- The rollback command is documented and a previous revision exists, but the
+  traffic drill is intentionally deferred.
+
+#### Next decision
+
+Week 3 should introduce durable Postgres storage and citation-grounded retrieval
+without coupling API routes directly to a specific database or vector engine.
+
 ### Weekly release template
 
 Copy this template once per week.
@@ -224,16 +323,16 @@ Score each area from 0 to 3:
 | Area | Score | Evidence |
 |---|---:|---|
 | API and provider integration | 2 | Two direct provider paths deployed, tested, and measured |
-| Structured output and error handling | 1 | Stable application errors; structured model output starts in Week 2 |
+| Structured output and error handling | 2 | Strict provider-neutral output, validation, retries, and failures tested |
 | RAG retrieval and citations | 0 |  |
-| Offline evaluation | 0 |  |
+| Offline evaluation | 2 | Guarded 30-case evaluator with aggregate-only metrics and fake-provider CI |
 | Tool safety and idempotency | 0 |  |
 | Async jobs and retries | 0 |  |
 | Multimodal/file lifecycle | 0 |  |
 | Authentication and tenant isolation | 0 |  |
-| Observability and cost tracking | 1 | Structured request metadata and a measured six-call cost record |
+| Observability and cost tracking | 2 | Privacy-safe usage events and measured Week 1/2 cost records |
 | CI/CD and rollback | 1 | GitHub CI, automatic Render deployment, and rollback runbook |
-| Threat model and runbook | 1 | Secret boundary and failure hygiene documented and exercised |
-| **Total out of 33** | **6** |  |
+| Threat model and runbook | 2 | Secret boundary, failure hygiene, Cloud Run runbook, and UI failure recovery documented |
+| **Total out of 33** | **11** |  |
 
 A high score is not the purpose. The evidence and honest limitations are.
