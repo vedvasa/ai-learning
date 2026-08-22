@@ -60,6 +60,9 @@ def test_release_stages_digest_pinned_candidate_before_promotion() -> None:
     assert 'image_reference="${image_path}@${image_digest}"' in deploy
     assert "--revision-suffix" in deploy
     assert "--no-traffic" in deploy
+    assert "service_exists=0" in deploy
+    assert "deploy_revision --no-traffic" in deploy
+    assert "Cloud Run cannot create a service with --no-traffic" in deploy
     assert "--tag" in deploy
     assert "scripts/smoke-cloud-run.sh" in deploy
     assert "--to-tags" in deploy

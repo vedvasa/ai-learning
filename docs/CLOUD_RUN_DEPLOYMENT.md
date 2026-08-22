@@ -14,9 +14,16 @@ The release path is:
 3. The build runs the offline 30-case dataset validation without provider keys.
 4. Artifact Registry stores an image tagged with the full Git commit SHA.
 5. The release resolves that tag to a digest and gives the digest to Cloud Run.
-6. Cloud Run creates a tagged candidate revision with zero production traffic.
+6. For an existing service, Cloud Run creates a tagged candidate revision with
+   zero production traffic.
 7. `scripts/smoke-cloud-run.sh` checks the candidate without model calls.
 8. Only a successful candidate receives 100% of service traffic.
+
+Cloud Run cannot create the first service revision with `--no-traffic`. The
+first release is therefore an explicit bootstrap exception: it has no older
+revision or users to displace, receives traffic immediately, and is smoke-tested
+before the release command reports success. Every later release uses the
+zero-traffic candidate gate.
 
 The application runs as
 `ai-learning-runtime@ai-learning-ved-2026.iam.gserviceaccount.com`. That identity
@@ -77,8 +84,8 @@ new explicit secret version:
 makes a revision reproducible and makes rotation a reviewed deployment.
 
 The command prints the service URL, candidate URL, revision, image digest, and
-the exact rollback command when a previous serving revision exists. A failed
-candidate smoke test exits before traffic changes.
+the exact rollback command when a previous serving revision exists. After the
+bootstrap release, a failed candidate smoke test exits before traffic changes.
 
 ## Runtime and cost controls
 

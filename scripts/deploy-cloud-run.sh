@@ -135,6 +135,7 @@ case "$image_digest" in
 esac
 image_reference="${image_path}@${image_digest}"
 
+service_exists=0
 previous_revision=""
 if previous_service="$(
   gcloud run services describe "$SERVICE" \
@@ -142,6 +143,7 @@ if previous_service="$(
     --project="$PROJECT_ID" \
     --format=json 2>/dev/null
 )"; then
+  service_exists=1
   previous_revision="$(
     printf '%s' "$previous_service" | python3 -c '
 import json
@@ -156,37 +158,47 @@ if serving:
   )"
 fi
 
-echo "Deploying $image_reference as a zero-traffic candidate."
-gcloud run deploy "$SERVICE" \
-  --image="$image_reference" \
-  --region="$REGION" \
-  --project="$PROJECT_ID" \
-  --revision-suffix="$revision_suffix" \
-  --tag="$candidate_tag" \
-  --no-traffic \
-  --allow-unauthenticated \
-  --service-account="$RUNTIME_SERVICE_ACCOUNT" \
-  --execution-environment=gen2 \
-  --port=8080 \
-  --cpu=1 \
-  --memory=512Mi \
-  --concurrency=4 \
-  --timeout=60s \
-  --min=0 \
-  --max=1 \
-  --cpu-throttling \
-  --no-cpu-boost \
-  --no-session-affinity \
-  --ingress=all \
-  --set-env-vars="APP_ENV=production,APP_VERSION=$commit_sha,LOG_LEVEL=INFO" \
-  --set-secrets="OPENAI_API_KEY=openai-api-key:$OPENAI_SECRET_VERSION,ANTHROPIC_API_KEY=anthropic-api-key:$ANTHROPIC_SECRET_VERSION" \
-  --startup-probe="httpGet.path=/health/ready,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=2,failureThreshold=30" \
-  --readiness-probe="httpGet.path=/health/ready,httpGet.port=8080,timeoutSeconds=2,periodSeconds=5,failureThreshold=2,successThreshold=1" \
-  --liveness-probe="httpGet.path=/health/live,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=10,failureThreshold=3" \
-  --deploy-health-check \
-  --labels="app=ai-learning,environment=learning,git-sha=$short_sha" \
-  --description="AI Learning Week 2 Ticket Triage API" \
-  --quiet
+deploy_revision() {
+  gcloud run deploy "$SERVICE" \
+    --image="$image_reference" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --revision-suffix="$revision_suffix" \
+    --tag="$candidate_tag" \
+    --allow-unauthenticated \
+    --service-account="$RUNTIME_SERVICE_ACCOUNT" \
+    --execution-environment=gen2 \
+    --port=8080 \
+    --cpu=1 \
+    --memory=512Mi \
+    --concurrency=4 \
+    --timeout=60s \
+    --min=0 \
+    --max=1 \
+    --cpu-throttling \
+    --no-cpu-boost \
+    --no-session-affinity \
+    --ingress=all \
+    --set-env-vars="APP_ENV=production,APP_VERSION=$commit_sha,LOG_LEVEL=INFO" \
+    --set-secrets="OPENAI_API_KEY=openai-api-key:$OPENAI_SECRET_VERSION,ANTHROPIC_API_KEY=anthropic-api-key:$ANTHROPIC_SECRET_VERSION" \
+    --startup-probe="httpGet.path=/health/ready,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=2,failureThreshold=30" \
+    --readiness-probe="httpGet.path=/health/ready,httpGet.port=8080,timeoutSeconds=2,periodSeconds=5,failureThreshold=2,successThreshold=1" \
+    --liveness-probe="httpGet.path=/health/live,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=10,failureThreshold=3" \
+    --deploy-health-check \
+    --labels="app=ai-learning,environment=learning,git-sha=$short_sha" \
+    --description="AI Learning Week 2 Ticket Triage API" \
+    --quiet \
+    "$@"
+}
+
+if [ "$service_exists" -eq 1 ]; then
+  echo "Deploying $image_reference as a zero-traffic candidate."
+  deploy_revision --no-traffic
+else
+  echo "Bootstrapping first service revision from $image_reference."
+  echo "Cloud Run cannot create a service with --no-traffic; no existing revision is at risk."
+  deploy_revision
+fi
 
 service_json="$(
   gcloud run services describe "$SERVICE" \

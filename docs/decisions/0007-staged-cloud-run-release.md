@@ -27,7 +27,8 @@ understood.
   on only the two provider secrets.
 - Secret version numbers are explicit; `latest` is not accepted by the release
   script.
-- A new revision receives a unique traffic tag but zero production traffic.
+- After the first service bootstrap, a new revision receives a unique traffic
+  tag but zero production traffic.
 - A provider-free public smoke test must pass on the tag URL before the release
   moves 100% of traffic to it.
 - Request-based billing, zero minimum instances, one maximum instance, bounded
@@ -42,6 +43,9 @@ understood.
 - A clean Git commit, registry digest, Cloud Run revision, and public behavior
   can be connected in one evidence chain.
 - A candidate failure does not replace the serving revision.
+- Cloud Run does not allow `--no-traffic` while creating a service. The first
+  revision is an explicit exception because no serving revision exists to
+  protect; it is smoke-tested immediately.
 - Rollback changes traffic immediately without rebuilding or rewriting Git.
 - The first release cannot prove rollback until a second revision exists.
 - Manual deployment depends on the developer's local Google login and is not
