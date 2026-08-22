@@ -104,6 +104,24 @@ the HTTPS homepage referenced CSS and JavaScript with absolute `http://` URLs.
 The browser blocked both assets, leaving the page unstyled and noninteractive.
 Treat this bootstrap as infrastructure evidence, not a successful UI release.
 
+## Verified corrected release
+
+After PR 17 merged, the corrected release completed on August 21, 2026:
+
+- live service: [ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/);
+- application commit: `0a9e55479ea2ffdc48f238b526bb936500d9d43c`;
+- Cloud Build: `41242a0e-6d29-4a8d-ba5f-a4b456c20407` (`SUCCESS`);
+- Cloud Run revision: `ai-learning-git-0a9e55479ea2`;
+- image digest: `sha256:255d3203ce972005f25c679dbfc61bdbb79b5ca886053eff34ac73e115b16d1a`;
+- traffic: 100% to the corrected revision;
+- previous revision: retained with 0% traffic; and
+- provider model calls: zero during release verification.
+
+The strengthened public smoke test passed. A real-browser check confirmed HTTPS
+CSS and JavaScript URLs, active styling, the expected application version, and
+working Ticket Triage/Prompt Playground tab switching. Up to 200 recent entries
+from the corrected revision also passed the provider-key-pattern hygiene check.
+
 See the [Week 2 deployment evidence](evidence/week-2/README.md) for the public
 checks, configuration assertions, and bootstrap limitation.
 
