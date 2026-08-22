@@ -136,7 +136,7 @@ success response. Ticket input is serialized as untrusted JSON and kept separate
 from system instructions.
 
 This slice intentionally has no ticket database: request text is processed in
-memory, not persisted, and omitted from application logs. The six committed
+memory, not persisted, and omitted from application logs. The 30 committed
 fixtures are fictional evaluation inputs rather than saved user tickets. A
 bounded, process-local recorder keeps at most 1,000 safe triage usage events by
 default: request ID, operation, provider/model, total duration, successful token

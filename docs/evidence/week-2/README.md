@@ -1,4 +1,4 @@
-# Week 2 Cloud Run deployment evidence
+# Week 2 Ticket Triage evidence
 
 Evidence date: 2026-08-21
 
@@ -93,6 +93,47 @@ confirmed:
 Neither check submitted a generation or triage form. Measured provider calls and
 model spend for the corrected release verification remained zero.
 
+## Two-provider functional acceptance
+
+The user submitted the same learning-scale acceptance case once through each
+deployed provider path. Both calls succeeded on their first attempt and returned
+responses that passed the shared Pydantic contract. Request IDs, provider request
+IDs, ticket identifiers, ticket text, generated summaries, requested actions,
+and rationales are intentionally omitted.
+
+| Provider | Model | Latency | Input tokens | Output tokens | Finish reason | Attempts | Estimated cost |
+|---|---|---:|---:|---:|---|---:|---:|
+| OpenAI | `gpt-5.6-luna` | 4,881.68 ms | 425 | 89 | `completed` | 1 | $0.0001918 |
+| Anthropic | `claude-haiku-4-5-20251001` | 4,491.40 ms | 917 | 105 | `end_turn` | 1 | $0.0014420 |
+| **Combined comparison** | **2 calls** | — | **1,342** | **194** | — | **2 total** | **$0.0016338** |
+
+Both providers selected `technical_issue` and did not require human review. They
+disagreed on priority (`medium` versus `high`) and sentiment (`negative` versus
+`neutral`) while reporting high confidence (`0.98` and `0.92`). This is the key
+quality finding: schema validity proves that output is safe to parse, not that a
+classification is correct or that two models will apply policy consistently.
+Model-reported confidence cannot replace labeled evaluation or an application
+review policy.
+
+### Pricing basis
+
+Costs use the successful token counts and standard first-party rates verified on
+August 21, 2026:
+
+- GPT-5.6 Luna: $0.20 per million input tokens and $1.20 per million output
+  tokens ([official OpenAI model pricing](https://developers.openai.com/api/docs/models/gpt-5.6-luna)).
+- Claude Haiku 4.5: $1 per million input tokens and $5 per million output tokens
+  ([official Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing)).
+
+Per-call estimate:
+
+`(input tokens × input rate + output tokens × output rate) / 1,000,000`
+
+At exactly this token shape, 100 classifications would cost approximately
+$0.01918 through OpenAI or $0.14420 through Anthropic; running both would cost
+$0.16338. These are small-sample estimates before credits, discounts, taxes,
+caching adjustments, or billing-rounding behavior—not production forecasts.
+
 ## Runtime boundary
 
 The live service configuration was inspected after promotion:
@@ -113,11 +154,11 @@ payloads into the repository.
 
 ## Cost and rollback notes
 
-The build, deployment, and smoke tests made zero provider model calls, so
-measured model spend for this release is `$0.00`. Cloud usage is constrained by
-scale-to-zero, a one-instance maximum, a project budget alert, and the active
-free trial/free-tier allowances. This evidence does not claim a reconciled cloud
-invoice.
+The build, deployment, and smoke tests made zero provider model calls. The two
+explicit functional-acceptance calls added `$0.0016338` of estimated model
+usage. Cloud usage is constrained by scale-to-zero, a one-instance maximum, a
+project budget alert, and the active free trial/free-tier allowances. This
+evidence does not claim a reconciled provider bill or cloud invoice.
 
 Cloud Run could not create the service with a zero-traffic first revision, so the
 bootstrap revision received traffic immediately. The corrected release used the
