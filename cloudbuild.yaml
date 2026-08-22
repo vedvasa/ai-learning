@@ -1,0 +1,27 @@
+steps:
+  - id: build-production-image
+    name: >-
+      gcr.io/cloud-builders/docker@sha256:2e8d40d8e48dc14fab4213d5e532d74f63fd403d9e8d7f6463096a75820286c3
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - build
+      - --tag
+      - ${_IMAGE_URI}
+      - .
+
+  - id: validate-offline-batch
+    name: >-
+      gcr.io/cloud-builders/docker@sha256:2e8d40d8e48dc14fab4213d5e532d74f63fd403d9e8d7f6463096a75820286c3
+    args:
+      - run
+      - --rm
+      - --entrypoint
+      - triage-batch
+      - ${_IMAGE_URI}
+      - --validate-only
+
+images:
+  - ${_IMAGE_URI}
+
+timeout: 1200s

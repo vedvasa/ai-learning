@@ -244,10 +244,40 @@ docker run --rm \
 
 Then open [http://127.0.0.1:8080](http://127.0.0.1:8080). Secrets are injected
 when the container starts and are never build arguments or image layers. PR 17
-will deploy this exact container contract to Cloud Run.
+deploys this exact container contract to Cloud Run.
 
 See [ADR 0006](docs/decisions/0006-pinned-nonroot-container.md) for the image,
 runtime-user, build-context, secret, health-check, and CI decisions.
+
+### Release the container to Cloud Run
+
+The Cloud Run release uses Cloud Build and Artifact Registry, then deploys the
+resolved image digest as a zero-traffic tagged candidate. A provider-free public
+smoke test must pass before the candidate receives service traffic. Runtime
+secrets come from explicit Secret Manager versions through a dedicated
+least-privilege service account.
+
+From a clean commit with the `ai-learning` gcloud configuration active:
+
+```bash
+GCP_PROJECT_ID=ai-learning-ved-2026 \
+  sh scripts/deploy-cloud-run.sh
+```
+
+The release uses request-based billing, scales from zero to at most one
+instance, and does not make paid model calls. Render remains the Week 1 fallback
+while Cloud Run becomes the container deployment target. See the
+[Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md) and
+[ADR 0007](docs/decisions/0007-staged-cloud-run-release.md) for setup, rollout,
+cost controls, evidence, secret rotation, and rollback.
+
+The PR 17 bootstrap revision `ai-learning-git-1df717f07ab3` is live at
+[ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/),
+but it is not a successful UI release. Its endpoint smoke test passed before a
+browser check exposed HTTP static-asset URLs on the HTTPS page. PR 17 contains
+the regression fix; it is not reflected in Cloud Run until a later explicitly
+authorized deployment. The full finding is recorded in the
+[Week 2 deployment evidence](docs/evidence/week-2/README.md).
 
 ## OpenAI connectivity check
 
