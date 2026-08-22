@@ -74,6 +74,20 @@ curl --silent --show-error --fail \
   >"$TEMP_DIRECTORY/home.html"
 grep -q 'KnowledgeDesk' "$TEMP_DIRECTORY/home.html"
 grep -q 'Ticket triage' "$TEMP_DIRECTORY/home.html"
+grep -q 'href="/static/styles.css"' "$TEMP_DIRECTORY/home.html"
+grep -q 'src="/static/app.js"' "$TEMP_DIRECTORY/home.html"
+if grep -Eq '(href|src)="http://[^"]*/static/' \
+  "$TEMP_DIRECTORY/home.html"; then
+  echo "Static asset URLs must be root-relative on the HTTPS service." >&2
+  exit 1
+fi
+
+curl --silent --show-error --fail \
+  --connect-timeout 5 \
+  --max-time 10 \
+  "$SERVICE_URL/static/styles.css" \
+  >"$TEMP_DIRECTORY/styles.css"
+grep -q '^:root {' "$TEMP_DIRECTORY/styles.css"
 
 curl --silent --show-error --fail \
   --connect-timeout 5 \

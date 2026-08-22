@@ -271,10 +271,12 @@ while Cloud Run becomes the container deployment target. See the
 [ADR 0007](docs/decisions/0007-staged-cloud-run-release.md) for setup, rollout,
 cost controls, evidence, secret rotation, and rollback.
 
-The PR 17 bootstrap release is live at
-[ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/).
-Its Cloud Build, immutable image digest, runtime controls, public smoke test, and
-log-hygiene check are recorded in the
+The PR 17 bootstrap revision `ai-learning-git-1df717f07ab3` is live at
+[ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/),
+but it is not a successful UI release. Its endpoint smoke test passed before a
+browser check exposed HTTP static-asset URLs on the HTTPS page. PR 17 contains
+the regression fix; it is not reflected in Cloud Run until a later explicitly
+authorized deployment. The full finding is recorded in the
 [Week 2 deployment evidence](docs/evidence/week-2/README.md).
 
 ## OpenAI connectivity check

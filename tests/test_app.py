@@ -106,6 +106,19 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     assert "AbortController" in script.text
 
 
+def test_home_page_uses_same_origin_static_asset_urls() -> None:
+    app = create_app(make_settings())
+
+    with TestClient(app) as client:
+        page = client.get("/")
+
+    assert page.status_code == 200
+    assert 'href="/static/styles.css"' in page.text
+    assert 'src="/static/app.js"' in page.text
+    assert 'href="http://testserver/static/' not in page.text
+    assert 'src="http://testserver/static/' not in page.text
+
+
 def test_settings_reject_nonpositive_limits() -> None:
     with pytest.raises(ValidationError):
         Settings(

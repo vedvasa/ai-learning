@@ -33,10 +33,35 @@ These warm, read-only checks made no model-provider calls.
 | `/health/ready` | 200 | 0.090 s |
 | `/openapi.json` | 200 | 0.097 s |
 
-The release smoke script also verified the homepage assets, Ticket Triage API
-contract, and deployed application version against both the tagged revision URL
-and the default service URL. It never called a generation, streaming, triage, or
-provider model endpoint.
+The initial release smoke script verified homepage text, fetched JavaScript
+directly, checked the Ticket Triage API contract, and matched the deployed
+application version against both the tagged revision URL and the default
+service URL. It never called a generation, streaming, triage, or provider model
+endpoint. Those checks established endpoint availability, not browser usability.
+
+## Browser acceptance finding
+
+A later real-browser check failed. The HTTPS homepage rendered these absolute
+asset URLs:
+
+```text
+http://ai-learning-3y5vyfqynq-uw.a.run.app/static/styles.css
+http://ai-learning-3y5vyfqynq-uw.a.run.app/static/app.js
+```
+
+The browser blocked the mixed-content assets. The computed body font remained
+the unstyled browser default, and selecting the Prompt Playground tab did not
+change the active tab or visible panel. The original smoke test missed the bug
+because it requested `/static/app.js` directly and did not validate the asset
+references emitted by the homepage or fetch the stylesheet.
+
+PR 17 changes those references to same-origin root-relative URLs and strengthens
+the smoke test to reject absolute HTTP asset references and fetch both assets.
+The strengthened script was run read-only against the existing bootstrap URL
+and rejected that revision as expected, without calling a provider endpoint.
+That correction is repository evidence only until a later deployment is
+explicitly authorized. The live bootstrap revision must not be described as a
+successful UI release.
 
 ## Runtime boundary
 

@@ -99,6 +99,11 @@ The first release completed on August 21, 2026:
 - traffic: 100% to the verified revision; and
 - provider model calls: zero during build and smoke verification.
 
+The endpoint smoke test passed, but a later browser acceptance check failed:
+the HTTPS homepage referenced CSS and JavaScript with absolute `http://` URLs.
+The browser blocked both assets, leaving the page unstyled and noninteractive.
+Treat this bootstrap as infrastructure evidence, not a successful UI release.
+
 See the [Week 2 deployment evidence](evidence/week-2/README.md) for the public
 checks, configuration assertions, and bootstrap limitation.
 
@@ -136,9 +141,12 @@ CLOUD_RUN_URL="$(
 sh scripts/smoke-cloud-run.sh "$CLOUD_RUN_URL"
 ```
 
-The smoke test checks liveness, readiness, the browser UI, static JavaScript,
-and the OpenAPI triage route. It never calls a generation, streaming, or triage
-endpoint, so it cannot create provider usage.
+The smoke test checks liveness, readiness, homepage content, root-relative CSS
+and JavaScript references, both static assets, and the OpenAPI triage route. It
+never calls a generation, streaming, or triage endpoint, so it cannot create
+provider usage. It guards the deployed asset wiring but does not execute the
+JavaScript in a real browser; manually confirm tab switching before declaring a
+UI release successful.
 
 After the smoke test passes, one short browser triage request per provider is an
 optional paid acceptance test. Record its token usage and cost separately.

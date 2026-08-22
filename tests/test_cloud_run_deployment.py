@@ -98,7 +98,11 @@ def test_public_smoke_is_provider_free_and_checks_deployed_contract() -> None:
     assert SMOKE_SCRIPT_PATH.stat().st_mode & S_IXUSR
     assert "/health/live" in smoke
     assert "/health/ready" in smoke
+    assert "/static/styles.css" in smoke
     assert "/static/app.js" in smoke
+    assert 'href="/static/styles.css"' in smoke
+    assert 'src="/static/app.js"' in smoke
+    assert "Static asset URLs must be root-relative" in smoke
     assert "/openapi.json" in smoke
     assert '"$SERVICE_URL/api/generate"' not in smoke
     assert '"$SERVICE_URL/api/stream"' not in smoke
