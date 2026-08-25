@@ -49,3 +49,27 @@ jobs:
 
       - name: Smoke-test production container
         run: sh scripts/smoke-container.sh ai-learning:ci
+
+  database-test:
+    name: Database test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@aa3515eac405eac768fa4a72147c22d88a283c7b # main 2026-08-11
+        with:
+          version: "2.115.0"
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Run database contract tests
+        run: supabase test db
+
+      - name: Lint database schema
+        run: >-
+          supabase db lint --local --schema knowledge
+          --level warning --fail-on error

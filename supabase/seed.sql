@@ -1,0 +1,2 @@
+-- Week 3 corpus rows are added by the ingestion command, not by migrations.
+-- Keep this file deterministic and free of credentials or real customer data.
