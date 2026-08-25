@@ -278,6 +278,26 @@ pass. The original bootstrap asset failure, corrected revision, immutable image
 digest, and recovery evidence are preserved in the
 [Week 2 deployment evidence](docs/evidence/week-2/README.md).
 
+## Week 3: Citation Q&A data foundation
+
+Week 3 builds a citation-grounded RAG application over fictional support
+documents. Its first increment adds a reproducible local Supabase project and a
+private `knowledge` schema containing documents, immutable document versions,
+chunks, ingestion jobs, conversations, messages, and privacy-aware model-call
+telemetry.
+
+Chunks use an explicit `vector(1536)` contract for
+`text-embedding-3-small`. The schema stores the model and dimension beside each
+populated embedding and rejects mismatches. Retrieval begins with exact vector
+search; approximate indexes are intentionally deferred until Week 4 measures a
+larger evaluation set.
+
+The migration is not automatically applied to the hosted Supabase project.
+Follow the [local database runbook](docs/DATABASE_DEVELOPMENT.md) to rebuild,
+test, and lint it without model calls. See
+[ADR 0008](docs/decisions/0008-private-pgvector-data-foundation.md) for the
+schema, access, tenancy, and index decisions.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
