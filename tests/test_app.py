@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -81,7 +83,19 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
 
     assert page.status_code == 200
     assert "KnowledgeDesk" in page.text
-    assert "Structured triage online" in page.text
+    assert "Citation Q&amp;A workspace" in page.text
+    assert 'id="answer-form"' in page.text
+    assert 'id="answer-provider"' in page.text
+    assert 'id="answer-model"' in page.text
+    assert 'id="answer-top-k"' in page.text
+    assert 'name="question"' in page.text
+    assert re.search(
+        r'id="answer-question"\s+name="question"\s+maxlength="2000"',
+        page.text,
+    )
+    assert 'id="answer-sources"' in page.text
+    assert 'id="answer-metric-conversation-id"' in page.text
+    assert "Generation is capped at 512 tokens" in " ".join(page.text.split())
     assert 'id="triage-form"' in page.text
     assert 'id="triage-metric-attempt-count"' in page.text
     assert 'name="ticket_id"' in page.text
@@ -103,6 +117,9 @@ def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
     assert "private-anthropic-value" not in script.text
     assert 'fetch("/api/stream"' in script.text
     assert 'fetch("/api/triage"' in script.text
+    assert 'fetch("/api/answer"' in script.text
+    assert "answerSources.replaceChildren()" in script.text
+    assert "innerHTML" not in script.text
     assert "AbortController" in script.text
 
 

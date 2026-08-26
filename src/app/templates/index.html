@@ -26,28 +26,37 @@
     <main class="shell">
       <section class="hero">
         <div>
-          <p class="eyebrow">KnowledgeDesk · Week 2</p>
-          <h1>Turn support requests into decisions.</h1>
+          <p class="eyebrow">KnowledgeDesk · Week 3</p>
+          <h1>Ask the knowledge base. See the evidence.</h1>
         </div>
         <div>
           <p class="hero-copy">
-            Classify tickets through either provider while the server enforces
-            one typed result contract, strict validation, and safe telemetry.
+            Retrieve public support knowledge, generate through either provider,
+            and trace every supported claim back to verified source chunks.
           </p>
           <div class="status-pill" role="status">
             <span class="status-dot" aria-hidden="true"></span>
-            Structured triage online
+            Citation Q&amp;A workspace
           </div>
         </div>
       </section>
 
       <nav class="mode-tabs" role="tablist" aria-label="KnowledgeDesk tools">
         <button
-          id="triage-tab"
+          id="answer-tab"
           class="mode-tab is-active"
           type="button"
           role="tab"
           aria-selected="true"
+          aria-controls="answer-workspace"
+          data-panel="answer-workspace"
+        >Citation Q&amp;A</button>
+        <button
+          id="triage-tab"
+          class="mode-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
           aria-controls="triage-workspace"
           data-panel="triage-workspace"
         >Ticket triage</button>
@@ -63,10 +72,197 @@
       </nav>
 
       <section
+        id="answer-workspace"
+        class="workspace"
+        role="tabpanel"
+        aria-labelledby="answer-tab"
+      >
+        <article class="card generation-card">
+          <div class="card-header">
+            <div>
+              <h2>Ask KnowledgeDesk</h2>
+              <p>Answers can cite only evidence retrieved by the server.</p>
+            </div>
+            <span class="release-badge">Grounded</span>
+          </div>
+
+          <form id="answer-form">
+            <div class="control-grid answer-control-grid">
+              <div class="field">
+                <label for="answer-provider">Provider</label>
+                <select id="answer-provider" name="provider">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.value }}"
+                      {% if provider.value == default_provider %}selected{% endif %}
+                    >{{ provider.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="answer-model">Model</label>
+                <select id="answer-model" name="model">
+                  {% for provider in providers %}
+                    <option
+                      value="{{ provider.model }}"
+                      data-provider="{{ provider.value }}"
+                    >{{ provider.model }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="answer-top-k">Evidence limit</label>
+                <select id="answer-top-k" name="top_k">
+                  <option value="3">3 chunks</option>
+                  <option value="5" selected>5 chunks</option>
+                  <option value="8">8 chunks</option>
+                  <option value="10">10 chunks</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field-heading">
+                <label for="answer-question">Support question</label>
+                <span id="answer-question-count">
+                  0 / {{ max_question_characters }}
+                </span>
+              </div>
+              <textarea
+                id="answer-question"
+                name="question"
+                maxlength="{{ max_question_characters }}"
+                placeholder="How long does a password reset link last?"
+                aria-describedby="answer-status"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button id="answer-button" type="submit">
+                <span class="button-label">Find a grounded answer</span>
+                <span class="button-progress" hidden>
+                  Retrieving and answering…
+                </span>
+              </button>
+              <button
+                id="answer-cancel-button"
+                class="cancel-button"
+                type="button"
+                hidden
+              >Cancel</button>
+            </div>
+            <p id="answer-status" class="hint" aria-live="polite">
+              The question and answer are saved as conversation history.
+              Generation is capped at {{ rag_answer_max_output_tokens }} tokens.
+            </p>
+          </form>
+
+          <section
+            id="answer-result"
+            class="result-panel"
+            aria-live="polite"
+            hidden
+          >
+            <div class="result-heading">
+              <h3>Grounded answer</h3>
+              <div class="result-chips">
+                <span id="answer-outcome" class="outcome-chip"></span>
+                <span id="answer-result-provider" class="provider-chip"></span>
+              </div>
+            </div>
+
+            <div id="answer-text" class="grounded-answer"></div>
+
+            <section class="sources-section" aria-labelledby="sources-heading">
+              <div class="sources-heading">
+                <h4 id="sources-heading">Verified sources</h4>
+                <span id="answer-source-count">0 sources</span>
+              </div>
+              <ol id="answer-sources" class="source-list"></ol>
+            </section>
+
+            <dl class="metrics">
+              <div>
+                <dt>Model</dt>
+                <dd id="answer-metric-model">—</dd>
+              </div>
+              <div>
+                <dt>Conversation ID</dt>
+                <dd id="answer-metric-conversation-id">—</dd>
+              </div>
+              <div>
+                <dt>Generation latency</dt>
+                <dd id="answer-metric-generation-latency">—</dd>
+              </div>
+              <div>
+                <dt>Embedding latency</dt>
+                <dd id="answer-metric-embedding-latency">—</dd>
+              </div>
+              <div>
+                <dt>Generation tokens</dt>
+                <dd id="answer-metric-generation-tokens">—</dd>
+              </div>
+              <div>
+                <dt>Attempts</dt>
+                <dd id="answer-metric-attempt-count">—</dd>
+              </div>
+              <div>
+                <dt>Request ID</dt>
+                <dd id="answer-metric-request-id">—</dd>
+              </div>
+              <div>
+                <dt>Provider request ID</dt>
+                <dd id="answer-metric-provider-request-id">—</dd>
+              </div>
+            </dl>
+          </section>
+        </article>
+
+        <aside class="card">
+          <h2>Grounding boundary</h2>
+          <p>What makes this different from sending retrieved text to a model.</p>
+
+          <ul class="check-list">
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>Server-scoped retrieval</strong>
+                The caller cannot select a tenant or retrieve private documents.
+              </span>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>Verified citations</strong>
+                Every displayed source ID must exist in the retrieved evidence.
+              </span>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>
+                <strong>Atomic history</strong>
+                The question, answer, citations, and telemetry commit together.
+              </span>
+            </li>
+          </ul>
+
+          <nav class="endpoint-links" aria-label="Application endpoints">
+            <a href="/health/live">/health/live</a>
+            <a href="/health/ready">/health/ready</a>
+            <a href="/docs">/docs</a>
+          </nav>
+        </aside>
+      </section>
+
+      <section
         id="triage-workspace"
         class="workspace"
         role="tabpanel"
         aria-labelledby="triage-tab"
+        hidden
       >
         <article class="card generation-card">
           <div class="card-header">

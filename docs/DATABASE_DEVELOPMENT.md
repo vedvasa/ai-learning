@@ -128,8 +128,9 @@ The response includes only application-verified sources whose chunk IDs were in
 the retrieved set. The database stores the submitted question, answer, verified
 citation metadata, and successful generation telemetry in one transaction.
 Application logs and `knowledge.model_calls` do not contain question, answer, or
-evidence text. This increment has an API contract and generated `/docs` entry,
-but no Q&A control in the browser UI yet.
+evidence text. The default browser workspace exercises the same endpoint and
+renders application-verified citations as numbered links to source cards. A
+browser submission has the same paid-call boundary as the `curl` example.
 
 Stop the stack without deleting its local volumes:
 
