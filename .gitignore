@@ -43,6 +43,7 @@ coverage.xml
 *.local.sqlite
 *.local.sqlite3
 /artifacts/
+/supabase/snippets/
 
 # Editors and operating systems
 .DS_Store
