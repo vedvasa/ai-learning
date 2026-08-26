@@ -147,3 +147,17 @@ def test_settings_reject_unsafe_retry_bounds(override: dict) -> None:
 def test_settings_rejects_unsafe_usage_recorder_capacity(capacity: int) -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, usage_recorder_capacity=capacity)
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"rag_tenant_id": ""},
+        {"rag_tenant_id": "tenant with spaces"},
+        {"rag_retrieval_min_similarity": -1.01},
+        {"rag_retrieval_min_similarity": 1.01},
+    ],
+)
+def test_settings_rejects_unsafe_retrieval_bounds(override: dict) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **override)

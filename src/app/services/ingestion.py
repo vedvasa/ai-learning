@@ -34,6 +34,7 @@ class IngestionRepository(Protocol):
         tenant_id: str,
         model: str,
         calls: Sequence[EmbeddingCall],
+        operation: str = "document_embedding_batch",
     ) -> None: ...
 
     def commit_document(

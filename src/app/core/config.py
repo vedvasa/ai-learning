@@ -12,6 +12,7 @@ RetryJitter = Annotated[float, Field(ge=0, le=1)]
 UsageRecorderCapacity = Annotated[int, Field(ge=1, le=10_000)]
 EmbeddingBatchSize = Annotated[int, Field(ge=1, le=2_048)]
 ChunkMaxTokens = Annotated[int, Field(ge=32, le=8_000)]
+RetrievalSimilarity = Annotated[float, Field(ge=-1, le=1)]
 
 
 class Settings(BaseSettings):
@@ -48,6 +49,13 @@ class Settings(BaseSettings):
     embedding_dimensions: Literal[1536] = 1536
     embedding_batch_size: EmbeddingBatchSize = 64
     rag_chunk_max_tokens: ChunkMaxTokens = 500
+    rag_tenant_id: str = Field(
+        default="knowledgedesk-demo",
+        min_length=1,
+        max_length=100,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
+    )
+    rag_retrieval_min_similarity: RetrievalSimilarity = 0
 
     def readiness_checks(self) -> dict[str, bool]:
         return {

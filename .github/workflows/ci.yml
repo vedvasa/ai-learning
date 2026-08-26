@@ -78,12 +78,13 @@ jobs:
       - name: Run database contract tests
         run: supabase test db
 
-      - name: Run ingestion repository integration test
+      - name: Run database repository integration tests
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: >-
           uv run --no-sync pytest -v
           tests/test_ingestion_repository.py
+          tests/test_retrieval_repository.py
 
       - name: Lint database schema
         run: >-
