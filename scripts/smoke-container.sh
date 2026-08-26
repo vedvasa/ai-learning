@@ -45,6 +45,7 @@ if docker image inspect --format '{{json .Config.Env}}' "$IMAGE" \
 fi
 
 docker run --rm --entrypoint triage-batch "$IMAGE" --validate-only
+docker run --rm --entrypoint rag-evaluation "$IMAGE" --validate-only
 
 docker run \
   --detach \

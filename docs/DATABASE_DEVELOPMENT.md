@@ -132,6 +132,54 @@ evidence text. The default browser workspace exercises the same endpoint and
 renders application-verified citations as numbered links to source cards. A
 browser submission has the same paid-call boundary as the `curl` example.
 
+## Validate and run the Week 3 acceptance set
+
+The committed acceptance set contains exactly 20 fictional questions: 12
+answerable, four ambiguous, and four intentionally unanswerable. Validate its
+schema, deterministic hash, category counts, and corpus references for free:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync rag-evaluation --validate-only
+```
+
+Validation exits before settings are loaded. It cannot read `.env`, open a
+database connection, or construct an OpenAI or Anthropic client.
+
+A live evaluation uses the same retrieval, grounding, citation validation, and
+atomic persistence path as `POST /api/answer`. It therefore makes a paid OpenAI
+embedding call for every selected case, usually makes a paid generation call,
+and stores each completed fictional exchange in the configured database. Start
+with the default category-balanced three-case sample against local Supabase:
+
+```bash
+uv run --no-sync --env-file .env rag-evaluation \
+  --provider openai \
+  --allow-paid-calls
+```
+
+Run the complete acceptance set only when you deliberately want up to 20 query
+embedding calls, generation calls, and local conversation writes:
+
+```bash
+uv run --no-sync --env-file .env rag-evaluation \
+  --provider openai \
+  --max-cases 20 \
+  --allow-paid-calls
+```
+
+The ignored `artifacts/rag-evaluation.json` report contains aggregate metrics,
+the dataset hash, provider, model, and run configuration. It omits case IDs,
+questions, answers, evidence, document keys, citation IDs, conversation IDs,
+and provider request IDs. The command reports retrieval and grounding behavior,
+not human-judged answer correctness; that deeper golden-set work belongs to
+Week 4.
+
+The command refuses a non-local `DATABASE_URL` unless
+`--allow-remote-database` is also supplied. Do not use that flag during routine
+pull-request testing. It authorizes hosted conversation and telemetry writes;
+the paid-call flag alone does not.
+
 Stop the stack without deleting its local volumes:
 
 ```bash
