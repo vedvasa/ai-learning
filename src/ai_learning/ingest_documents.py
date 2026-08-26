@@ -6,9 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
 
-import psycopg
-from psycopg.conninfo import conninfo_to_dict
-
+from ai_learning.database_safety import is_local_database as _is_local_database
 from app.core.config import Settings
 from app.rag.chunking import MarkdownChunker
 from app.rag.documents import DocumentFormatError, load_corpus
@@ -17,7 +15,6 @@ from app.rag.repository import PsycopgKnowledgeRepository
 from app.services.ingestion import DocumentIngestionError, DocumentIngestor
 
 DEFAULT_CORPUS = Path("datasets/knowledge-base")
-LOCAL_DATABASE_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -150,14 +147,6 @@ def run(argv: Sequence[str] | None = None) -> int:
 
 def main() -> None:
     raise SystemExit(run())
-
-
-def _is_local_database(database_url: str) -> bool:
-    try:
-        host = conninfo_to_dict(database_url).get("host")
-    except psycopg.ProgrammingError:
-        return False
-    return host in LOCAL_DATABASE_HOSTS
 
 
 def _positive_int(value: str) -> int:

@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "dataset_name": "KnowledgeDesk Week 3 RAG acceptance",
+  "forbidden_document_keys": [
+    "escalation-policy"
+  ],
+  "cases": [
+    {
+      "case_id": "answerable-password-reset-expiry",
+      "question": "How long is a password reset link valid, and what happens if I request a second one?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["account-password-reset"]
+    },
+    {
+      "case_id": "answerable-change-email",
+      "question": "How do I change my account email address, and when does the new address become active?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["account-profile"]
+    },
+    {
+      "case_id": "answerable-api-rate-limit",
+      "question": "What is the Pro plan API request limit and how should my client respond to HTTP 429?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["api-rate-limits", "plan-limits-pro"]
+    },
+    {
+      "case_id": "answerable-download-invoice",
+      "question": "Who can download a paid invoice and where do they find it?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["billing-invoices"]
+    },
+    {
+      "case_id": "answerable-payment-retries",
+      "question": "When does KnowledgeDesk retry a failed subscription payment, and how long is the grace period?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["billing-payment-failures"]
+    },
+    {
+      "case_id": "answerable-downgrade-timing",
+      "question": "When does a plan downgrade take effect and what happens to automations above the new limit?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["billing-plan-changes"]
+    },
+    {
+      "case_id": "answerable-cancel-access",
+      "question": "If I cancel a subscription, how long do paid features remain available and does cancellation create a refund?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["cancel-subscription"]
+    },
+    {
+      "case_id": "answerable-deleted-ticket-retention",
+      "question": "For how long can a deleted ticket be recovered, and can backups restore one individual record later?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["data-retention"]
+    },
+    {
+      "case_id": "answerable-missing-notifications",
+      "question": "What should I check first when email notifications are missing?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["notification-delivery"]
+    },
+    {
+      "case_id": "answerable-refund-eligibility",
+      "question": "When may a first-time subscription purchase be eligible for a refund?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["refunds-eligibility"]
+    },
+    {
+      "case_id": "answerable-mfa-methods",
+      "question": "Which MFA methods does KnowledgeDesk support, and is SMS available?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["security-mfa"]
+    },
+    {
+      "case_id": "answerable-sync-troubleshooting",
+      "question": "What should I try before escalating a cross-device synchronization problem?",
+      "kind": "answerable",
+      "expected_behavior": "answer",
+      "expected_document_keys": ["troubleshooting-sync"]
+    },
+    {
+      "case_id": "ambiguous-how-long",
+      "question": "How long does it take?",
+      "kind": "ambiguous",
+      "expected_behavior": "abstain_or_clarify",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "ambiguous-change-it",
+      "question": "Can I change it after I submit it?",
+      "kind": "ambiguous",
+      "expected_behavior": "abstain_or_clarify",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "ambiguous-seven-days",
+      "question": "What happens after seven days?",
+      "kind": "ambiguous",
+      "expected_behavior": "abstain_or_clarify",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "ambiguous-plan-choice",
+      "question": "Which plan is right for us?",
+      "kind": "ambiguous",
+      "expected_behavior": "abstain_or_clarify",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "unanswerable-weather",
+      "question": "What will the weather be in Seattle tomorrow?",
+      "kind": "unanswerable",
+      "expected_behavior": "abstain",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "unanswerable-ceo",
+      "question": "Who is the current CEO of KnowledgeDesk?",
+      "kind": "unanswerable",
+      "expected_behavior": "abstain",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "unanswerable-pricing",
+      "question": "What is the exact monthly price in US dollars for every KnowledgeDesk plan?",
+      "kind": "unanswerable",
+      "expected_behavior": "abstain",
+      "expected_document_keys": []
+    },
+    {
+      "case_id": "unanswerable-roadmap",
+      "question": "On what date will KnowledgeDesk release offline mobile editing?",
+      "kind": "unanswerable",
+      "expected_behavior": "abstain",
+      "expected_document_keys": []
+    }
+  ]
+}

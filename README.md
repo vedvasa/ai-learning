@@ -333,6 +333,18 @@ abstention from a grounded answer. Ticket Triage and Prompt Playground remain
 available as secondary tabs. See
 [ADR 0011](docs/decisions/0011-validate-grounded-citations-before-atomic-persistence.md).
 
+The Week 3 acceptance increment adds a versioned 20-question dataset with 12
+answerable, four ambiguous, and four intentionally unanswerable questions. The
+`rag-evaluation --validate-only` path verifies the dataset, its exact category
+composition, and every referenced corpus document without loading settings,
+opening the database, or constructing a provider client. A guarded live run
+uses the real local retrieve-answer-persist pipeline and writes only aggregate
+metrics to the ignored `artifacts/` directory. It measures retrieval hits,
+abstention behavior, application-verified citation validity, forbidden-document
+leakage, latency, tokens, attempts, and failures; it deliberately does not claim
+semantic answer correctness without human review. See
+[ADR 0012](docs/decisions/0012-versioned-local-rag-acceptance-evaluation.md).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
