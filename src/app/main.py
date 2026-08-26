@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.generate import router as generate_router
 from app.api.health import router as health_router
+from app.api.answering import router as answering_router
 from app.api.retrieval import router as retrieval_router
 from app.api.stream import router as stream_router
 from app.api.triage import router as triage_router
@@ -25,6 +26,8 @@ from app.schemas.triage import (
     TicketChannel,
 )
 from app.services.retrieval import SemanticRetriever
+from app.services.answering import GroundedAnswerService
+from app.services.retry import RetryPolicy
 from app.services.usage import InMemoryUsageRecorder, UsageRecorder
 
 APP_DIRECTORY = Path(__file__).resolve().parent
@@ -36,6 +39,7 @@ def create_app(
     provider_registry: ProviderRegistry | None = None,
     usage_recorder: UsageRecorder | None = None,
     semantic_retriever: SemanticRetriever | None = None,
+    grounded_answer_service: GroundedAnswerService | None = None,
 ) -> FastAPI:
     app_settings = settings or get_settings()
     app = FastAPI(
@@ -47,11 +51,12 @@ def create_app(
     )
 
     logging.getLogger("app").setLevel(app_settings.log_level)
-    app.state.provider_registry = (
+    registry = (
         provider_registry
         if provider_registry is not None
         else build_provider_registry(app_settings)
     )
+    app.state.provider_registry = registry
     app.state.usage_recorder = (
         usage_recorder
         if usage_recorder is not None
@@ -59,8 +64,18 @@ def create_app(
             capacity=app_settings.usage_recorder_capacity,
         )
     )
-    app.state.semantic_retriever = semantic_retriever or _build_retriever(
+    retriever = semantic_retriever or _build_retriever(
         app_settings
+    )
+    app.state.semantic_retriever = retriever
+    app.state.grounded_answer_service = (
+        grounded_answer_service
+        if grounded_answer_service is not None
+        else _build_grounded_answer_service(
+            app_settings,
+            registry=registry,
+            retriever=retriever,
+        )
     )
 
     if settings is not None:
@@ -68,6 +83,7 @@ def create_app(
 
     register_error_handling(app)
     app.include_router(health_router)
+    app.include_router(answering_router)
     app.include_router(generate_router)
     app.include_router(stream_router)
     app.include_router(triage_router)
@@ -137,6 +153,26 @@ def _build_retriever(settings: Settings) -> SemanticRetriever | None:
         tenant_id=settings.rag_tenant_id,
         minimum_similarity=settings.rag_retrieval_min_similarity,
         allowed_visibilities=("public",),
+    )
+
+
+def _build_grounded_answer_service(
+    settings: Settings,
+    *,
+    registry: ProviderRegistry,
+    retriever: SemanticRetriever | None,
+) -> GroundedAnswerService | None:
+    if settings.database_url is None or retriever is None:
+        return None
+    return GroundedAnswerService(
+        registry=registry,
+        retriever=retriever,
+        repository=PsycopgKnowledgeRepository(
+            settings.database_url.get_secret_value()
+        ),
+        retry_policy=RetryPolicy.from_settings(settings),
+        timeout_seconds=settings.llm_timeout_seconds,
+        tenant_id=settings.rag_tenant_id,
     )
 
 

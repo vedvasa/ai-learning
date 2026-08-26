@@ -106,6 +106,31 @@ The default similarity floor is provisional. Inspect the returned scores, but
 do not tune the threshold from one example. Week 4 will use a labeled question
 set to measure and calibrate retrieval behavior.
 
+## Exercise citation-grounded answers locally
+
+The grounded endpoint requires the same local database and OpenAI embedding
+configuration as retrieval, plus the key for the selected generation provider.
+With FastAPI still running, send a question through OpenAI:
+
+```bash
+curl --fail-with-body http://127.0.0.1:8000/api/answer \
+  --header 'Content-Type: application/json' \
+  --header 'X-Request-ID: local-answer-001' \
+  --data '{"provider":"openai","model":"gpt-5.6-luna","question":"How long does a password reset link last?","top_k":5}'
+```
+
+To use Anthropic, change `provider` to `anthropic` and `model` to the configured
+`ANTHROPIC_MODEL`. The request normally makes one paid OpenAI embeddings call
+and one paid generation call through the selected provider. If retrieval finds
+no evidence, the application skips generation and returns a fixed abstention.
+
+The response includes only application-verified sources whose chunk IDs were in
+the retrieved set. The database stores the submitted question, answer, verified
+citation metadata, and successful generation telemetry in one transaction.
+Application logs and `knowledge.model_calls` do not contain question, answer, or
+evidence text. This increment has an API contract and generated `/docs` entry,
+but no Q&A control in the browser UI yet.
+
 Stop the stack without deleting its local volumes:
 
 ```bash
@@ -113,8 +138,9 @@ supabase stop
 ```
 
 Database reset, pgTAP, lint, and repository integration tests make no OpenAI or
-Anthropic calls. Live ingestion and `/api/retrieve` do make paid OpenAI
-embeddings calls; their corresponding instructions identify that boundary.
+Anthropic calls. Live ingestion and `/api/retrieve` make paid OpenAI embeddings
+calls. `/api/answer` also makes a paid generation call unless retrieval returns
+no evidence; the corresponding instructions identify each boundary.
 
 ## Hosted-project boundary
 

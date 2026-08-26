@@ -102,4 +102,9 @@ curl --silent --show-error --fail \
   >"$TEMP_DIRECTORY/app.js"
 grep -q 'fetch("/api/triage"' "$TEMP_DIRECTORY/app.js"
 
+curl --silent --show-error --fail \
+  "http://127.0.0.1:${host_port}/openapi.json" \
+  >"$TEMP_DIRECTORY/openapi.json"
+grep -q '"/api/answer"' "$TEMP_DIRECTORY/openapi.json"
+
 echo "Container smoke test passed for $IMAGE on port $host_port."

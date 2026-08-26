@@ -126,6 +126,7 @@ def test_settings_reject_nonpositive_limits() -> None:
             llm_timeout_seconds=0,
             llm_max_output_tokens=0,
             triage_max_output_tokens=0,
+            rag_answer_max_output_tokens=0,
         )
 
 

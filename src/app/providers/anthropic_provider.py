@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from app.providers.base import (
     GenerationResult,
+    GroundedAnswerResult,
     TriageResult,
     ProviderStream,
     ProviderError,
@@ -24,6 +25,8 @@ from app.providers.base import (
     StreamCompleted,
     StreamTextDelta,
 )
+from app.rag.grounding import GROUNDED_ANSWER_INSTRUCTIONS
+from app.schemas.answering import GroundedAnswerDraft
 from app.schemas.triage import SupportTicket, TicketTriage
 from app.services.triage import TRIAGE_SYSTEM_INSTRUCTIONS, serialize_ticket
 
@@ -39,11 +42,13 @@ class AnthropicProvider:
         timeout_seconds: float,
         max_output_tokens: int,
         triage_max_output_tokens: int = 256,
+        answer_max_output_tokens: int = 512,
         client: AsyncAnthropic | Any | None = None,
     ) -> None:
         self.model = model
         self._max_output_tokens = max_output_tokens
         self._triage_max_output_tokens = triage_max_output_tokens
+        self._answer_max_output_tokens = answer_max_output_tokens
         self._client = client or AsyncAnthropic(
             api_key=api_key,
             timeout=timeout_seconds,
@@ -211,6 +216,62 @@ class AnthropicProvider:
 
         return TriageResult(
             triage=triage,
+            provider=self.name,
+            model=response.model,
+            latency_ms=round((perf_counter() - started_at) * 1000, 2),
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            finish_reason=response.stop_reason or "unknown",
+            provider_request_id=getattr(response, "_request_id", None),
+        )
+
+    async def answer_grounded(
+        self, serialized_input: str
+    ) -> GroundedAnswerResult:
+        started_at = perf_counter()
+        try:
+            response = await self._client.messages.parse(
+                model=self.model,
+                max_tokens=self._answer_max_output_tokens,
+                system=GROUNDED_ANSWER_INSTRUCTIONS,
+                messages=[{"role": "user", "content": serialized_input}],
+                output_format=GroundedAnswerDraft,
+            )
+        except AuthenticationError as error:
+            raise self._provider_error(
+                ProviderErrorKind.AUTHENTICATION, error
+            ) from error
+        except RateLimitError as error:
+            raise self._provider_error(
+                ProviderErrorKind.RATE_LIMIT, error
+            ) from error
+        except APITimeoutError as error:
+            raise self._provider_error(ProviderErrorKind.TIMEOUT, error) from error
+        except BadRequestError as error:
+            raise self._provider_error(
+                ProviderErrorKind.INVALID_REQUEST, error
+            ) from error
+        except APIConnectionError as error:
+            raise self._provider_error(
+                ProviderErrorKind.UNAVAILABLE, error
+            ) from error
+        except APIStatusError as error:
+            raise self._provider_error(
+                self._status_error_kind(error), error
+            ) from error
+        except APIError as error:
+            raise self._provider_error(ProviderErrorKind.FAILURE, error) from error
+        except ValidationError as error:
+            raise ProviderError(ProviderErrorKind.INVALID_OUTPUT) from error
+
+        draft = response.parsed_output
+        if draft is None or response.stop_reason in {"max_tokens", "refusal"}:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_OUTPUT,
+                provider_request_id=getattr(response, "_request_id", None),
+            )
+        return GroundedAnswerResult(
+            draft=draft,
             provider=self.name,
             model=response.model,
             latency_ms=round((perf_counter() - started_at) * 1000, 2),

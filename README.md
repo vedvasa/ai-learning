@@ -319,6 +319,17 @@ No approximate index is added before Week 4 evaluation measures the exact
 baseline. See
 [ADR 0010](docs/decisions/0010-server-owned-exact-semantic-retrieval.md).
 
+The grounded-answer increment adds `POST /api/answer`. It retrieves first, then
+asks either configured provider for the same closed answer contract. Every
+supported claim must include an inline marker containing a retrieved chunk ID;
+the application parses and verifies those markers before it returns source
+metadata or writes anything. With no retrieved evidence, it stores a fixed
+abstention without making a generation call. Conversation, messages, verified
+citations, and successful generation telemetry commit in one Postgres
+transaction. This slice is API-only; the browser Q&A interface remains a later
+increment. See
+[ADR 0011](docs/decisions/0011-validate-grounded-citations-before-atomic-persistence.md).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

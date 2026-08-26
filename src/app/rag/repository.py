@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 import psycopg
 
+from app.providers.base import ProviderName
 from app.rag.chunking import DocumentChunk
 from app.rag.documents import SourceDocument
 from app.rag.embeddings import EmbeddingCall
@@ -37,8 +38,29 @@ class RetrievedChunk:
     similarity: float
 
 
+@dataclass(frozen=True, slots=True)
+class AnswerGenerationCall:
+    request_id: UUID
+    provider: ProviderName
+    model: str
+    latency_ms: float
+    input_tokens: int
+    output_tokens: int
+
+
+@dataclass(frozen=True, slots=True)
+class StoredAnswerExchange:
+    conversation_id: UUID
+    user_message_id: UUID
+    assistant_message_id: UUID
+
+
 class KnowledgeSearchError(RuntimeError):
     """Safe repository error that does not expose connection details."""
+
+
+class AnswerPersistenceError(RuntimeError):
+    """Safe repository error for an atomic question/answer write."""
 
 
 class PsycopgKnowledgeRepository:
@@ -285,6 +307,101 @@ class PsycopgKnowledgeRepository:
                 similarity=round(row[12], 6),
             )
             for row in rows
+        )
+
+    def save_answer_exchange(
+        self,
+        *,
+        tenant_id: str,
+        question: str,
+        answer: str,
+        abstained: bool,
+        citations: Sequence[RetrievedChunk],
+        generation_call: AnswerGenerationCall | None,
+    ) -> StoredAnswerExchange:
+        conversation_id = uuid4()
+        user_message_id = uuid4()
+        assistant_message_id = uuid4()
+        citation_payload = [
+            {
+                "chunk_id": str(citation.chunk_id),
+                "document_id": str(citation.document_id),
+                "document_version_id": str(citation.document_version_id),
+                "document_key": citation.document_key,
+                "canonical_path": citation.canonical_path,
+                "source_url": citation.source_url,
+                "similarity": citation.similarity,
+            }
+            for citation in citations
+        ]
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                connection.execute(
+                    """
+                    insert into knowledge.conversations (id, tenant_id)
+                    values (%s, %s)
+                    """,
+                    (conversation_id, tenant_id),
+                )
+                connection.execute(
+                    """
+                    insert into knowledge.messages (
+                        id, conversation_id, tenant_id, sequence_number,
+                        role, content
+                    )
+                    values (%s, %s, %s, 0, 'user', %s)
+                    """,
+                    (user_message_id, conversation_id, tenant_id, question),
+                )
+                connection.execute(
+                    """
+                    insert into knowledge.messages (
+                        id, conversation_id, tenant_id, sequence_number,
+                        role, content, citations, abstained
+                    )
+                    values (%s, %s, %s, 1, 'assistant', %s, %s::jsonb, %s)
+                    """,
+                    (
+                        assistant_message_id,
+                        conversation_id,
+                        tenant_id,
+                        answer,
+                        json.dumps(citation_payload, sort_keys=True),
+                        abstained,
+                    ),
+                )
+                if generation_call is not None:
+                    connection.execute(
+                        """
+                        insert into knowledge.model_calls (
+                            request_id, tenant_id, conversation_id, message_id,
+                            operation, provider, model, outcome, latency_ms,
+                            input_tokens, output_tokens
+                        )
+                        values (
+                            %s, %s, %s, %s, 'grounded_answer', %s, %s,
+                            'succeeded', %s, %s, %s
+                        )
+                        """,
+                        (
+                            generation_call.request_id,
+                            tenant_id,
+                            conversation_id,
+                            assistant_message_id,
+                            generation_call.provider,
+                            generation_call.model,
+                            generation_call.latency_ms,
+                            generation_call.input_tokens,
+                            generation_call.output_tokens,
+                        ),
+                    )
+        except psycopg.Error as error:
+            raise AnswerPersistenceError("answer exchange write failed") from error
+
+        return StoredAnswerExchange(
+            conversation_id=conversation_id,
+            user_message_id=user_message_id,
+            assistant_message_id=assistant_message_id,
         )
 
     def commit_document(
