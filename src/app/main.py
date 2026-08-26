@@ -19,6 +19,7 @@ from app.providers.registry import build_provider_registry
 from app.rag.embeddings import OpenAIEmbeddingClient
 from app.rag.repository import PsycopgKnowledgeRepository
 from app.schemas.generation import MAX_PROMPT_CHARACTERS
+from app.schemas.retrieval import MAX_QUESTION_CHARACTERS
 from app.schemas.triage import (
     MAX_TICKET_BODY_CHARACTERS,
     MAX_TICKET_ID_CHARACTERS,
@@ -120,7 +121,11 @@ def create_app(
                 ),
                 "default_provider": app_settings.llm_provider,
                 "max_prompt_characters": MAX_PROMPT_CHARACTERS,
+                "max_question_characters": MAX_QUESTION_CHARACTERS,
                 "max_output_tokens": app_settings.llm_max_output_tokens,
+                "rag_answer_max_output_tokens": (
+                    app_settings.rag_answer_max_output_tokens
+                ),
                 "triage_max_output_tokens": (
                     app_settings.triage_max_output_tokens
                 ),

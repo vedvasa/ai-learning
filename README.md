@@ -326,8 +326,11 @@ the application parses and verifies those markers before it returns source
 metadata or writes anything. With no retrieved evidence, it stores a fixed
 abstention without making a generation call. Conversation, messages, verified
 citations, and successful generation telemetry commit in one Postgres
-transaction. This slice is API-only; the browser Q&A interface remains a later
-increment. See
+transaction. The browser's default Citation Q&A workspace calls this endpoint,
+renders inline markers as numbered links to verified source cards, exposes
+retrieval scores and safe operational telemetry, and clearly distinguishes an
+abstention from a grounded answer. Ticket Triage and Prompt Playground remain
+available as secondary tabs. See
 [ADR 0011](docs/decisions/0011-validate-grounded-citations-before-atomic-persistence.md).
 
 ## OpenAI connectivity check
