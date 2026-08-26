@@ -309,6 +309,16 @@ chunks commit atomically. See
 [ADR 0009](docs/decisions/0009-explicit-idempotent-document-ingestion.md) for
 the cost, idempotency, transaction, and remote-write safety decisions.
 
+The retrieval increment adds `POST /api/retrieve`. The backend embeds one
+validated question and performs exact cosine search over compatible chunks
+from the active document versions. The tenant is server-configured, and the
+unauthenticated endpoint can retrieve only public documents; callers cannot
+override either boundary. Results contain stable source identifiers, metadata,
+and similarity scores for the citation-grounded answer layer that follows.
+No approximate index is added before Week 4 evaluation measures the exact
+baseline. See
+[ADR 0010](docs/decisions/0010-server-owned-exact-semantic-retrieval.md).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

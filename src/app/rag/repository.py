@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 from uuid import UUID, uuid4
 
 import psycopg
@@ -20,8 +20,29 @@ class StoredDocument:
     active_content_hash: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class RetrievedChunk:
+    chunk_id: UUID
+    document_id: UUID
+    document_version_id: UUID
+    document_key: str
+    title: str
+    canonical_path: str
+    source_url: str | None
+    visibility: str
+    chunk_index: int
+    heading_path: tuple[str, ...]
+    content: str
+    metadata: dict[str, Any]
+    similarity: float
+
+
+class KnowledgeSearchError(RuntimeError):
+    """Safe repository error that does not expose connection details."""
+
+
 class PsycopgKnowledgeRepository:
-    """Short-lived Postgres operations for the explicit ingestion command."""
+    """Short-lived Postgres operations for ingestion and exact retrieval."""
 
     def __init__(self, database_url: str) -> None:
         if not database_url.strip():
@@ -136,9 +157,12 @@ class PsycopgKnowledgeRepository:
         tenant_id: str,
         model: str,
         calls: Sequence[EmbeddingCall],
+        operation: str = "document_embedding_batch",
     ) -> None:
         if not calls:
             return
+        if not operation.strip():
+            raise ValueError("operation must not be blank")
         with psycopg.connect(self._database_url) as connection:
             with connection.cursor() as cursor:
                 cursor.executemany(
@@ -147,13 +171,14 @@ class PsycopgKnowledgeRepository:
                         request_id, tenant_id, operation, provider, model,
                         outcome, latency_ms, input_tokens
                     )
-                    values (%s, %s, 'document_embedding_batch', 'openai', %s,
+                    values (%s, %s, %s, 'openai', %s,
                             'succeeded', %s, %s)
                     """,
                     [
                         (
                             call.request_id,
                             tenant_id,
+                            operation,
                             model,
                             call.latency_ms,
                             call.input_tokens,
@@ -161,6 +186,106 @@ class PsycopgKnowledgeRepository:
                         for call in calls
                     ],
                 )
+
+    def search_chunks(
+        self,
+        *,
+        tenant_id: str,
+        query_embedding: Sequence[float],
+        embedding_model: str,
+        embedding_dimensions: int,
+        top_k: int,
+        minimum_similarity: float,
+        allowed_visibilities: Sequence[str],
+    ) -> tuple[RetrievedChunk, ...]:
+        if len(query_embedding) != embedding_dimensions:
+            raise ValueError("query embedding dimension does not match contract")
+        if top_k <= 0:
+            raise ValueError("top_k must be positive")
+        if not allowed_visibilities:
+            raise ValueError("allowed_visibilities must not be empty")
+
+        serialized_embedding = self._serialize_vector(query_embedding)
+        try:
+            with psycopg.connect(self._database_url, autocommit=True) as connection:
+                rows = connection.execute(
+                    """
+                    with query_vector as (
+                        select %s::extensions.vector as embedding
+                    ),
+                    candidates as (
+                        select
+                            chunk.id as chunk_id,
+                            document.id as document_id,
+                            version.id as document_version_id,
+                            document.document_key,
+                            document.title,
+                            document.canonical_path,
+                            document.source_url,
+                            document.visibility,
+                            chunk.chunk_index,
+                            chunk.heading_path,
+                            chunk.content,
+                            chunk.metadata,
+                            (
+                                1 - (
+                                    chunk.embedding
+                                    operator(extensions.<=>)
+                                    query_vector.embedding
+                                )
+                            )::double precision as similarity
+                        from knowledge.chunks as chunk
+                        join knowledge.document_versions as version
+                            on version.id = chunk.document_version_id
+                            and version.tenant_id = chunk.tenant_id
+                        join knowledge.documents as document
+                            on document.id = version.document_id
+                            and document.tenant_id = version.tenant_id
+                        cross join query_vector
+                        where chunk.tenant_id = %s
+                            and version.is_active
+                            and document.visibility = any(%s)
+                            and chunk.embedding is not null
+                            and chunk.embedding_model = %s
+                            and chunk.embedding_dimension = %s
+                    )
+                    select *
+                    from candidates
+                    where similarity >= %s
+                    order by similarity desc, chunk_id
+                    limit %s
+                    """,
+                    (
+                        serialized_embedding,
+                        tenant_id,
+                        list(allowed_visibilities),
+                        embedding_model,
+                        embedding_dimensions,
+                        minimum_similarity,
+                        top_k,
+                    ),
+                ).fetchall()
+        except psycopg.Error as error:
+            raise KnowledgeSearchError("knowledge search failed") from error
+
+        return tuple(
+            RetrievedChunk(
+                chunk_id=row[0],
+                document_id=row[1],
+                document_version_id=row[2],
+                document_key=row[3],
+                title=row[4],
+                canonical_path=row[5],
+                source_url=row[6],
+                visibility=row[7],
+                chunk_index=row[8],
+                heading_path=tuple(row[9]),
+                content=row[10],
+                metadata=row[11],
+                similarity=round(row[12], 6),
+            )
+            for row in rows
+        )
 
     def commit_document(
         self,

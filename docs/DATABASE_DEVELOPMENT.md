@@ -76,14 +76,45 @@ an embeddings request. Changed documents reuse tenant-scoped cached embeddings
 for chunks with the same content hash. The command never prints document text,
 provider keys, or the database URL.
 
+## Exercise exact semantic retrieval locally
+
+The retrieval endpoint requires the local `DATABASE_URL`, an OpenAI key, and an
+ingested corpus. Reinstall the current branch as a non-editable wheel, then run
+FastAPI in one terminal:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync --env-file .env uvicorn app.main:app --reload
+```
+
+In another terminal, send a retrieval request:
+
+```bash
+curl --fail-with-body http://127.0.0.1:8000/api/retrieve \
+  --header 'Content-Type: application/json' \
+  --header 'X-Request-ID: local-retrieval-001' \
+  --data '{"question":"How long does a password reset link last?","top_k":5}'
+```
+
+Sending this request deliberately makes one paid OpenAI embeddings call and
+writes best-effort operational telemetry. It performs exact cosine search over
+active, model-compatible chunks for the server-configured tenant. Because the
+application is not authenticated yet, the endpoint returns only documents
+marked `public`; the request cannot select a tenant or visibility.
+
+The default similarity floor is provisional. Inspect the returned scores, but
+do not tune the threshold from one example. Week 4 will use a labeled question
+set to measure and calibrate retrieval behavior.
+
 Stop the stack without deleting its local volumes:
 
 ```bash
 supabase stop
 ```
 
-None of these commands use OpenAI or Anthropic, and none make a paid model
-call.
+Database reset, pgTAP, lint, and repository integration tests make no OpenAI or
+Anthropic calls. Live ingestion and `/api/retrieve` do make paid OpenAI
+embeddings calls; their corresponding instructions identify that boundary.
 
 ## Hosted-project boundary
 

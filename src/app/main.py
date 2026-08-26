@@ -8,12 +8,15 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.generate import router as generate_router
 from app.api.health import router as health_router
+from app.api.retrieval import router as retrieval_router
 from app.api.stream import router as stream_router
 from app.api.triage import router as triage_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handling
 from app.providers.base import ProviderRegistry
 from app.providers.registry import build_provider_registry
+from app.rag.embeddings import OpenAIEmbeddingClient
+from app.rag.repository import PsycopgKnowledgeRepository
 from app.schemas.generation import MAX_PROMPT_CHARACTERS
 from app.schemas.triage import (
     MAX_TICKET_BODY_CHARACTERS,
@@ -21,6 +24,7 @@ from app.schemas.triage import (
     MAX_TICKET_SUBJECT_CHARACTERS,
     TicketChannel,
 )
+from app.services.retrieval import SemanticRetriever
 from app.services.usage import InMemoryUsageRecorder, UsageRecorder
 
 APP_DIRECTORY = Path(__file__).resolve().parent
@@ -31,6 +35,7 @@ def create_app(
     settings: Settings | None = None,
     provider_registry: ProviderRegistry | None = None,
     usage_recorder: UsageRecorder | None = None,
+    semantic_retriever: SemanticRetriever | None = None,
 ) -> FastAPI:
     app_settings = settings or get_settings()
     app = FastAPI(
@@ -54,6 +59,9 @@ def create_app(
             capacity=app_settings.usage_recorder_capacity,
         )
     )
+    app.state.semantic_retriever = semantic_retriever or _build_retriever(
+        app_settings
+    )
 
     if settings is not None:
         app.dependency_overrides[get_settings] = lambda: app_settings
@@ -63,6 +71,7 @@ def create_app(
     app.include_router(generate_router)
     app.include_router(stream_router)
     app.include_router(triage_router)
+    app.include_router(retrieval_router)
     app.mount(
         "/static",
         StaticFiles(directory=APP_DIRECTORY / "static"),
@@ -109,6 +118,26 @@ def create_app(
         )
 
     return app
+
+
+def _build_retriever(settings: Settings) -> SemanticRetriever | None:
+    if settings.database_url is None or settings.openai_api_key is None:
+        return None
+    return SemanticRetriever(
+        repository=PsycopgKnowledgeRepository(
+            settings.database_url.get_secret_value()
+        ),
+        embedding_client=OpenAIEmbeddingClient(
+            api_key=settings.openai_api_key.get_secret_value(),
+            model=settings.embedding_model,
+            dimensions=settings.embedding_dimensions,
+            batch_size=1,
+            timeout_seconds=settings.llm_timeout_seconds,
+        ),
+        tenant_id=settings.rag_tenant_id,
+        minimum_similarity=settings.rag_retrieval_min_similarity,
+        allowed_visibilities=("public",),
+    )
 
 
 app = create_app()
