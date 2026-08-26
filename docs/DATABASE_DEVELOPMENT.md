@@ -41,8 +41,13 @@ matter, normalize its Markdown, and preview deterministic chunk counts without
 using the database or an API key:
 
 ```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
 uv run --no-sync ingest-documents --dry-run
 ```
+
+The explicit package reinstall matters after switching branches or changing
+source code: `--no-sync` intentionally executes the already-installed wheel
+and will not rebuild it.
 
 For live local ingestion, put the local Postgres connection in the ignored
 `.env` file. The standard Supabase local stack uses:
