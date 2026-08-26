@@ -5,6 +5,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, AsyncGenerator, Literal, Protocol
 
 if TYPE_CHECKING:
+    from app.schemas.answering import GroundedAnswerDraft
     from app.schemas.triage import SupportTicket, TicketTriage
 
 ProviderName = Literal["openai", "anthropic"]
@@ -25,6 +26,18 @@ class GenerationResult:
 @dataclass(frozen=True, slots=True)
 class TriageResult:
     triage: TicketTriage
+    provider: ProviderName
+    model: str
+    latency_ms: float
+    input_tokens: int
+    output_tokens: int
+    finish_reason: str
+    provider_request_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class GroundedAnswerResult:
+    draft: GroundedAnswerDraft
     provider: ProviderName
     model: str
     latency_ms: float
@@ -81,6 +94,10 @@ class Provider(Protocol):
     def stream(self, prompt: str) -> ProviderStream: ...
 
     async def triage(self, ticket: SupportTicket) -> TriageResult: ...
+
+    async def answer_grounded(
+        self, serialized_input: str
+    ) -> GroundedAnswerResult: ...
 
 
 class ProviderLookupError(Exception):

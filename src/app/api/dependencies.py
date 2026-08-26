@@ -2,6 +2,7 @@ from fastapi import Request, status
 
 from app.core.errors import ApplicationError
 from app.providers.base import ProviderRegistry
+from app.services.answering import GroundedAnswerService
 from app.services.retrieval import SemanticRetriever
 from app.services.usage import UsageRecorder
 
@@ -23,3 +24,14 @@ def get_semantic_retriever(request: Request) -> SemanticRetriever:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
     return retriever
+
+
+def get_grounded_answer_service(request: Request) -> GroundedAnswerService:
+    service = request.app.state.grounded_answer_service
+    if service is None:
+        raise ApplicationError(
+            code="grounded_answer_not_configured",
+            message="Grounded question answering is not configured on this server.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return service

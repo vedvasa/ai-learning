@@ -19,6 +19,9 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                     triage_max_output_tokens=(
                         settings.triage_max_output_tokens
                     ),
+                    answer_max_output_tokens=(
+                        settings.rag_answer_max_output_tokens
+                    ),
                 )
             )
 
@@ -35,6 +38,9 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                     max_output_tokens=settings.llm_max_output_tokens,
                     triage_max_output_tokens=(
                         settings.triage_max_output_tokens
+                    ),
+                    answer_max_output_tokens=(
+                        settings.rag_answer_max_output_tokens
                     ),
                 )
             )

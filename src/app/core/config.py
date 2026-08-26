@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     llm_retry_jitter_ratio: RetryJitter = 0.25
     llm_max_output_tokens: PositiveInt = 64
     triage_max_output_tokens: PositiveInt = 256
+    rag_answer_max_output_tokens: PositiveInt = 512
     max_model_cost_usd_per_request: PositiveFloat = 0.05
     usage_recorder_capacity: UsageRecorderCapacity = 1_000
 
