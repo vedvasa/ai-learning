@@ -292,11 +292,22 @@ populated embedding and rejects mismatches. Retrieval begins with exact vector
 search; approximate indexes are intentionally deferred until Week 4 measures a
 larger evaluation set.
 
-The migration is not automatically applied to the hosted Supabase project.
-Follow the [local database runbook](docs/DATABASE_DEVELOPMENT.md) to rebuild,
-test, and lint it without model calls. See
+The schema migration was explicitly applied to the learning Supabase project
+after PR 20 merged. It remains reproducible from source rather than from
+dashboard-only edits. Follow the
+[local database runbook](docs/DATABASE_DEVELOPMENT.md) to rebuild, test, and
+lint it without model calls. See
 [ADR 0008](docs/decisions/0008-private-pgvector-data-foundation.md) for the
 schema, access, tenancy, and index decisions.
+
+The next increment adds 21 fictional Markdown support documents and the
+explicit `ingest-documents` command. A dry run validates metadata and previews
+heading-aware chunks without database or provider calls. Live ingestion
+batches missing `text-embedding-3-small` vectors, reuses model-aware content
+hashes, records job state, and activates a new document version only after its
+chunks commit atomically. See
+[ADR 0009](docs/decisions/0009-explicit-idempotent-document-ingestion.md) for
+the cost, idempotency, transaction, and remote-write safety decisions.
 
 ## OpenAI connectivity check
 

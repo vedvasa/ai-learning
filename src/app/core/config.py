@@ -10,6 +10,8 @@ RetryAttempts = Annotated[int, Field(ge=1, le=5)]
 RetryDelay = Annotated[float, Field(ge=0, le=60)]
 RetryJitter = Annotated[float, Field(ge=0, le=1)]
 UsageRecorderCapacity = Annotated[int, Field(ge=1, le=10_000)]
+EmbeddingBatchSize = Annotated[int, Field(ge=1, le=2_048)]
+ChunkMaxTokens = Annotated[int, Field(ge=32, le=8_000)]
 
 
 class Settings(BaseSettings):
@@ -40,6 +42,12 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5.6-luna"
     anthropic_api_key: SecretStr | None = None
     anthropic_model: str = "claude-haiku-4-5-20251001"
+
+    database_url: SecretStr | None = None
+    embedding_model: Literal["text-embedding-3-small"] = "text-embedding-3-small"
+    embedding_dimensions: Literal[1536] = 1536
+    embedding_batch_size: EmbeddingBatchSize = 64
+    rag_chunk_max_tokens: ChunkMaxTokens = 500
 
     def readiness_checks(self) -> dict[str, bool]:
         return {
