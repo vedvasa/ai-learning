@@ -12,6 +12,7 @@ IMAGE_NAME="${GCP_IMAGE_NAME:-ai-learning}"
 SERVICE="${CLOUD_RUN_SERVICE:-ai-learning}"
 OPENAI_SECRET_VERSION="${OPENAI_SECRET_VERSION:-1}"
 ANTHROPIC_SECRET_VERSION="${ANTHROPIC_SECRET_VERSION:-1}"
+DATABASE_SECRET_VERSION="${DATABASE_SECRET_VERSION:-1}"
 RUNTIME_SERVICE_ACCOUNT="${CLOUD_RUN_SERVICE_ACCOUNT:-ai-learning-runtime@${PROJECT_ID}.iam.gserviceaccount.com}"
 
 fail() {
@@ -57,6 +58,9 @@ validate_secret_version "$OPENAI_SECRET_VERSION" "OPENAI_SECRET_VERSION"
 validate_secret_version \
   "$ANTHROPIC_SECRET_VERSION" \
   "ANTHROPIC_SECRET_VERSION"
+validate_secret_version \
+  "$DATABASE_SECRET_VERSION" \
+  "DATABASE_SECRET_VERSION"
 
 configured_project="$(gcloud config get-value project 2>/dev/null)"
 if [ "$configured_project" != "$PROJECT_ID" ]; then
@@ -101,11 +105,20 @@ anthropic_secret_state="$(
     --project="$PROJECT_ID" \
     --format='value(state)'
 )"
+database_secret_state="$(
+  gcloud secrets versions describe "$DATABASE_SECRET_VERSION" \
+    --secret=supabase-database-url \
+    --project="$PROJECT_ID" \
+    --format='value(state)'
+)"
 if [ "$openai_secret_state" != "ENABLED" ]; then
   fail "OpenAI secret version $OPENAI_SECRET_VERSION is not enabled."
 fi
 if [ "$anthropic_secret_state" != "ENABLED" ]; then
   fail "Anthropic secret version $ANTHROPIC_SECRET_VERSION is not enabled."
+fi
+if [ "$database_secret_state" != "ENABLED" ]; then
+  fail "Database secret version $DATABASE_SECRET_VERSION is not enabled."
 fi
 
 image_path="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
@@ -179,14 +192,14 @@ deploy_revision() {
     --no-cpu-boost \
     --no-session-affinity \
     --ingress=all \
-    --set-env-vars="APP_ENV=production,APP_VERSION=$commit_sha,LOG_LEVEL=INFO" \
-    --set-secrets="OPENAI_API_KEY=openai-api-key:$OPENAI_SECRET_VERSION,ANTHROPIC_API_KEY=anthropic-api-key:$ANTHROPIC_SECRET_VERSION" \
+    --set-env-vars="APP_ENV=production,APP_VERSION=$commit_sha,LOG_LEVEL=INFO,RAG_DATABASE_REQUIRED=true" \
+    --set-secrets="OPENAI_API_KEY=openai-api-key:$OPENAI_SECRET_VERSION,ANTHROPIC_API_KEY=anthropic-api-key:$ANTHROPIC_SECRET_VERSION,DATABASE_URL=supabase-database-url:$DATABASE_SECRET_VERSION" \
     --startup-probe="httpGet.path=/health/ready,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=2,failureThreshold=30" \
     --readiness-probe="httpGet.path=/health/ready,httpGet.port=8080,timeoutSeconds=2,periodSeconds=5,failureThreshold=2,successThreshold=1" \
     --liveness-probe="httpGet.path=/health/live,httpGet.port=8080,initialDelaySeconds=0,timeoutSeconds=2,periodSeconds=10,failureThreshold=3" \
     --deploy-health-check \
     --labels="app=ai-learning,environment=learning,git-sha=$short_sha" \
-    --description="AI Learning Week 2 Ticket Triage API" \
+    --description="AI Learning Week 3 Citation Q&A" \
     --quiet \
     "$@"
 }

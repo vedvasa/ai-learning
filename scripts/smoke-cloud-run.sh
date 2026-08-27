@@ -66,6 +66,7 @@ fi
 grep -q '"status":"ready"' "$TEMP_DIRECTORY/ready.json"
 grep -q '"openai_api_key":true' "$TEMP_DIRECTORY/ready.json"
 grep -q '"anthropic_api_key":true' "$TEMP_DIRECTORY/ready.json"
+grep -q '"database_url":true' "$TEMP_DIRECTORY/ready.json"
 
 curl --silent --show-error --fail \
   --connect-timeout 5 \
@@ -74,6 +75,7 @@ curl --silent --show-error --fail \
   >"$TEMP_DIRECTORY/home.html"
 grep -q 'KnowledgeDesk' "$TEMP_DIRECTORY/home.html"
 grep -q 'Ticket triage' "$TEMP_DIRECTORY/home.html"
+grep -q 'Citation Q&amp;A workspace' "$TEMP_DIRECTORY/home.html"
 grep -q 'href="/static/styles.css"' "$TEMP_DIRECTORY/home.html"
 grep -q 'src="/static/app.js"' "$TEMP_DIRECTORY/home.html"
 if grep -Eq '(href|src)="http://[^"]*/static/' \
@@ -95,6 +97,7 @@ curl --silent --show-error --fail \
   "$SERVICE_URL/static/app.js" \
   >"$TEMP_DIRECTORY/app.js"
 grep -q 'fetch("/api/triage"' "$TEMP_DIRECTORY/app.js"
+grep -q 'fetch("/api/answer"' "$TEMP_DIRECTORY/app.js"
 
 curl --silent --show-error --fail \
   --connect-timeout 5 \
@@ -102,5 +105,7 @@ curl --silent --show-error --fail \
   "$SERVICE_URL/openapi.json" \
   >"$TEMP_DIRECTORY/openapi.json"
 grep -q '"/api/triage"' "$TEMP_DIRECTORY/openapi.json"
+grep -q '"/api/retrieve"' "$TEMP_DIRECTORY/openapi.json"
+grep -q '"/api/answer"' "$TEMP_DIRECTORY/openapi.json"
 
 echo "Cloud Run smoke test passed for $SERVICE_URL without model calls."

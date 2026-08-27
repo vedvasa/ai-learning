@@ -1,9 +1,9 @@
-# Deploy Ticket Triage to Cloud Run
+# Deploy KnowledgeDesk to Cloud Run
 
-This runbook releases the Week 2 container to Google Cloud Run without changing
-the existing Render service. The release is deliberately manual while we learn
-the cloud boundary. A later release can replace the local user credential with
-GitHub Actions and Workload Identity Federation.
+This runbook releases the Week 3 Citation Q&A container to Google Cloud Run
+without changing the existing Render service. The release is deliberately
+manual while we learn the cloud boundary. A later release can replace the local
+user credential with GitHub Actions and Workload Identity Federation.
 
 ## Deployed architecture
 
@@ -11,7 +11,8 @@ The release path is:
 
 1. `gcloud` uploads only the `.gcloudignore` whitelist to Cloud Build.
 2. Cloud Build uses the pinned Docker builder in `cloudbuild.yaml`.
-3. The build runs the offline 30-case dataset validation without provider keys.
+3. The build validates both the 30-case triage dataset and the 20-question RAG
+   dataset without provider keys or a database connection.
 4. Artifact Registry stores an image tagged with the full Git commit SHA.
 5. The release resolves that tag to a digest and gives the digest to Cloud Run.
 6. For an existing service, Cloud Run creates a tagged candidate revision with
@@ -27,9 +28,9 @@ zero-traffic candidate gate.
 
 The application runs as
 `ai-learning-runtime@ai-learning-ved-2026.iam.gserviceaccount.com`. That identity
-can access only the `openai-api-key` and `anthropic-api-key` secrets. Secret
-values are injected when an instance starts and never enter Git, Cloud Build,
-the container image, or the deploy command.
+can access only `openai-api-key`, `anthropic-api-key`, and
+`supabase-database-url`. Secret values are injected when an instance starts and
+never enter Git, Cloud Build, the container image, or the deploy command.
 
 ## One-time prerequisites
 
@@ -41,7 +42,9 @@ The learning project uses these resources:
 - runtime service account `ai-learning-runtime`;
 - enabled Cloud Run, Cloud Build, Artifact Registry, Secret Manager, and IAM
   APIs;
-- enabled version `1` of each provider secret; and
+- enabled version `1` of each provider secret;
+- an enabled version `1` of `supabase-database-url`, containing the remote
+  Supabase Transaction pooler URI; and
 - a project-scoped monthly budget alert.
 
 The active local `gcloud` configuration must point at the same project:
@@ -53,6 +56,54 @@ gcloud config get-value run/region
 ```
 
 The expected project and region are `ai-learning-ved-2026` and `us-west1`.
+
+## Prepare the Week 3 database secret
+
+Use **Connect** in the Supabase project dashboard and copy the Transaction
+pooler connection string. This mode is intended for short-lived serverless
+connections and provides IPv4 connectivity. Replace the password placeholder
+with the URL-encoded database password and ensure the URI includes
+`sslmode=require`. Do not use a browser-facing Supabase key: `DATABASE_URL` is a
+server-only Postgres credential.
+
+Create the secret once, then enter its value without echoing it or placing it
+in shell history:
+
+```bash
+gcloud secrets create supabase-database-url \
+  --replication-policy=automatic \
+  --project=ai-learning-ved-2026
+
+echo "Paste the Supabase Transaction pooler DATABASE_URL, then press Return:"
+read -r -s SUPABASE_DATABASE_URL
+echo
+printf '%s' "$SUPABASE_DATABASE_URL" | \
+  gcloud secrets versions add supabase-database-url \
+    --data-file=- \
+    --project=ai-learning-ved-2026
+unset SUPABASE_DATABASE_URL
+```
+
+Grant only the runtime identity access to this one secret:
+
+```bash
+gcloud secrets add-iam-policy-binding supabase-database-url \
+  --member=serviceAccount:ai-learning-runtime@ai-learning-ved-2026.iam.gserviceaccount.com \
+  --role=roles/secretmanager.secretAccessor \
+  --project=ai-learning-ved-2026
+```
+
+Verify the version state without reading its payload:
+
+```bash
+gcloud secrets versions describe 1 \
+  --secret=supabase-database-url \
+  --project=ai-learning-ved-2026 \
+  --format='value(state)'
+```
+
+The expected output is `ENABLED`. The release script checks this state but
+never reads or prints the credential.
 
 ## Release a clean commit
 
@@ -79,9 +130,11 @@ new explicit secret version:
 | `CLOUD_RUN_SERVICE_ACCOUNT` | `ai-learning-runtime@PROJECT_ID.iam.gserviceaccount.com` |
 | `OPENAI_SECRET_VERSION` | `1` |
 | `ANTHROPIC_SECRET_VERSION` | `1` |
+| `DATABASE_SECRET_VERSION` | `1` |
 
-`latest` is intentionally rejected for secrets. Selecting versions explicitly
-makes a revision reproducible and makes rotation a reviewed deployment.
+`latest` is intentionally rejected for all three secrets. Selecting versions
+explicitly makes a revision reproducible and makes rotation a reviewed
+deployment.
 
 The command prints the service URL, candidate URL, revision, image digest, and
 the exact rollback command when a previous serving revision exists. After the
@@ -136,7 +189,7 @@ The release explicitly configures:
 - second-generation execution;
 - startup and readiness checks on `/health/ready`;
 - liveness checks on `/health/live`; and
-- pinned provider secret versions.
+- pinned provider and database secret versions.
 
 Maximum instances is a guardrail, not a spending cap. The service is public for
 the learning UI and has no user authentication or rate limit, so provider-side
@@ -159,15 +212,20 @@ CLOUD_RUN_URL="$(
 sh scripts/smoke-cloud-run.sh "$CLOUD_RUN_URL"
 ```
 
-The smoke test checks liveness, readiness, homepage content, root-relative CSS
-and JavaScript references, both static assets, and the OpenAPI triage route. It
-never calls a generation, streaming, or triage endpoint, so it cannot create
-provider usage. It guards the deployed asset wiring but does not execute the
-JavaScript in a real browser; manually confirm tab switching before declaring a
-UI release successful.
+The smoke test checks liveness, configuration readiness, homepage content,
+root-relative CSS and JavaScript references, both static assets, and the
+triage, retrieval, and grounded-answer OpenAPI routes. It confirms that a
+database secret was injected, but intentionally does not query Postgres. It
+also never calls generation, streaming, triage, retrieval, or answer endpoints,
+so it cannot create provider usage. It guards deployed wiring but does not
+execute JavaScript in a real browser; manually confirm tab switching before
+declaring a UI release successful.
 
-After the smoke test passes, one short browser triage request per provider is an
-optional paid acceptance test. Record its token usage and cost separately.
+After the smoke test passes, one short grounded Citation Q&A request is an
+optional paid acceptance test. Confirm that the response has verified source
+cards and that one fictional conversation appears in the Supabase dashboard.
+Record token usage and cost separately; never use real customer data in this
+public learning service.
 
 ## Inspect the deployed boundary
 
@@ -223,10 +281,10 @@ revision.
 
 ## Secret rotation
 
-Add a new secret version through standard input, then release with its explicit
-number. Do not destroy the previous version until the new revision has passed
-its candidate and public checks. Disable or destroy unused versions afterward
-to stay within the active-version allowance.
+Add a new provider or database secret version through standard input, then
+release with its explicit version variable. Do not destroy the previous version
+until the new revision has passed its candidate and public checks. Disable or
+destroy unused versions afterward to stay within the active-version allowance.
 
 ## Current delivery limitation
 

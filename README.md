@@ -255,7 +255,9 @@ The Cloud Run release uses Cloud Build and Artifact Registry, then deploys the
 resolved image digest as a zero-traffic tagged candidate. A provider-free public
 smoke test must pass before the candidate receives service traffic. Runtime
 secrets come from explicit Secret Manager versions through a dedicated
-least-privilege service account.
+least-privilege service account. The Week 3 release additionally requires a
+pinned Supabase Transaction pooler `DATABASE_URL`; readiness checks that the
+credential is configured without issuing a database query on every probe.
 
 From a clean commit with the `ai-learning` gcloud configuration active:
 
@@ -356,6 +358,13 @@ default. See
 The grounded prompt explicitly treats missing context, requirements, or user
 preferences as ambiguity: it asks one concise clarifying question with
 `abstained=true` and no citations instead of inventing a recommendation.
+
+The Week 3 Cloud Run release extends the staged deployment with the remote
+database secret and provider-free checks for the Citation Q&A UI and API routes.
+See [ADR 0014](docs/decisions/0014-pinned-database-secret-readiness.md) and the
+[Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md). The PR prepares
+this release; creating the secret and running the deployment remain explicit
+post-merge operator actions.
 
 ## OpenAI connectivity check
 

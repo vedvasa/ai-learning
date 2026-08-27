@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-haiku-4-5-20251001"
 
     database_url: SecretStr | None = None
+    rag_database_required: bool = False
     embedding_model: Literal["text-embedding-3-small"] = "text-embedding-3-small"
     embedding_dimensions: Literal[1536] = 1536
     embedding_batch_size: EmbeddingBatchSize = 64
@@ -59,10 +60,13 @@ class Settings(BaseSettings):
     rag_retrieval_min_similarity: RetrievalSimilarity = 0
 
     def readiness_checks(self) -> dict[str, bool]:
-        return {
+        checks = {
             "openai_api_key": self._secret_is_set(self.openai_api_key),
             "anthropic_api_key": self._secret_is_set(self.anthropic_api_key),
         }
+        if self.rag_database_required:
+            checks["database_url"] = self._secret_is_set(self.database_url)
+        return checks
 
     @staticmethod
     def _secret_is_set(secret: SecretStr | None) -> bool:

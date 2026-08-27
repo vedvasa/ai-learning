@@ -39,15 +39,17 @@ def test_cloud_build_uses_a_pinned_builder_and_offline_gate() -> None:
         "2e8d40d8e48dc14fab4213d5e532d74f63fd403d9e8d7f6463096a75820286c3"
     )
 
-    assert cloud_build.count(pinned_builder) == 2
+    assert cloud_build.count(pinned_builder) == 3
     assert "DOCKER_BUILDKIT=1" in cloud_build
     assert "${_IMAGE_URI}" in cloud_build
     assert "validate-offline-batch" in cloud_build
     assert "triage-batch" in cloud_build
+    assert "rag-evaluation" in cloud_build
     assert "--validate-only" in cloud_build
     assert "images:" in cloud_build
     assert "OPENAI_API_KEY" not in cloud_build
     assert "ANTHROPIC_API_KEY" not in cloud_build
+    assert "DATABASE_URL" not in cloud_build
 
 
 def test_release_stages_digest_pinned_candidate_before_promotion() -> None:
@@ -75,11 +77,16 @@ def test_release_pins_secrets_and_bounds_runtime_cost() -> None:
 
     assert 'OPENAI_SECRET_VERSION="${OPENAI_SECRET_VERSION:-1}"' in deploy
     assert 'ANTHROPIC_SECRET_VERSION="${ANTHROPIC_SECRET_VERSION:-1}"' in deploy
+    assert 'DATABASE_SECRET_VERSION="${DATABASE_SECRET_VERSION:-1}"' in deploy
     assert "must be an explicit positive integer, not latest" in deploy
     assert "openai-api-key:$OPENAI_SECRET_VERSION" in deploy
     assert "anthropic-api-key:$ANTHROPIC_SECRET_VERSION" in deploy
+    assert "supabase-database-url:$DATABASE_SECRET_VERSION" in deploy
+    assert "DATABASE_URL=supabase-database-url" in deploy
     assert "openai-api-key:latest" not in deploy
     assert "anthropic-api-key:latest" not in deploy
+    assert "supabase-database-url:latest" not in deploy
+    assert "RAG_DATABASE_REQUIRED=true" in deploy
     assert "--service-account" in deploy
     assert "--cpu-throttling" in deploy
     assert "--min=0" in deploy
@@ -107,6 +114,11 @@ def test_public_smoke_is_provider_free_and_checks_deployed_contract() -> None:
     assert '"$SERVICE_URL/api/generate"' not in smoke
     assert '"$SERVICE_URL/api/stream"' not in smoke
     assert '"$SERVICE_URL/api/triage"' not in smoke
+    assert '"$SERVICE_URL/api/answer"' not in smoke
+    assert '"database_url":true' in smoke
+    assert 'fetch("/api/answer"' in smoke
+    assert '"/api/retrieve"' in smoke
+    assert '"/api/answer"' in smoke
     assert "without model calls" in smoke
 
 
@@ -119,6 +131,7 @@ def test_ci_syntax_checks_cloud_scripts_without_deploying() -> None:
     assert "GCP_PROJECT_ID" not in workflow
     assert "OPENAI_API_KEY" not in workflow
     assert "ANTHROPIC_API_KEY" not in workflow
+    assert "\n          DATABASE_URL:" not in workflow
 
 
 def test_runbook_documents_rollback_and_manual_cd_boundary() -> None:
@@ -128,3 +141,7 @@ def test_runbook_documents_rollback_and_manual_cd_boundary() -> None:
     assert "Workload Identity Federation" in runbook
     assert "does not deploy it" in runbook
     assert "never enter Git" in runbook
+    assert "supabase-database-url" in runbook
+    assert "Transaction pooler" in runbook
+    assert "DATABASE_SECRET_VERSION" in runbook
+    assert "does not query Postgres" in runbook

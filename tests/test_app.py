@@ -12,6 +12,8 @@ def make_settings(
     *,
     openai_api_key: str | None = "test-openai-key",
     anthropic_api_key: str | None = "test-anthropic-key",
+    database_url: str | None = None,
+    rag_database_required: bool = False,
 ) -> Settings:
     return Settings(
         _env_file=None,
@@ -19,6 +21,8 @@ def make_settings(
         app_version="0.1.0-test",
         openai_api_key=openai_api_key,
         anthropic_api_key=anthropic_api_key,
+        database_url=database_url,
+        rag_database_required=rag_database_required,
     )
 
 
@@ -66,6 +70,35 @@ def test_readiness_fails_when_required_key_is_missing() -> None:
             "anthropic_api_key": False,
         },
     }
+
+
+def test_readiness_requires_database_only_when_release_opts_in() -> None:
+    app = create_app(
+        make_settings(
+            database_url="postgresql://test:test@db.example.com/postgres",
+            rag_database_required=True,
+        )
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json()["checks"] == {
+        "openai_api_key": True,
+        "anthropic_api_key": True,
+        "database_url": True,
+    }
+
+
+def test_readiness_fails_when_opted_in_database_is_missing() -> None:
+    app = create_app(make_settings(rag_database_required=True))
+
+    with TestClient(app) as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["checks"]["database_url"] is False
 
 
 def test_home_page_and_static_asset_do_not_expose_secrets() -> None:
