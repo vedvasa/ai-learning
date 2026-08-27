@@ -32,6 +32,9 @@ limit would create unpredictable cost and latency.
   `LLM_TIMEOUT_SECONDS` deadline. Do not add a separate hidden retry loop.
 - Persist nothing from a rejected attempt. After a successful retry, atomically
   store only the accepted answer and its verified citations.
+- Treat questions missing necessary context, requirements, or preferences as
+  ambiguous. Ask one concise clarifying question with `abstained=true` and no
+  citation instead of inferring a recommendation.
 - Sum known provider latency and input/output tokens from every attempt that
   returned a structured result. Return and persist those totals with the
   successful exchange. Keep the final accepted result's finish reason and
@@ -44,6 +47,8 @@ limit would create unpredictable cost and latency.
 
 - A stochastic citation-format failure can recover without weakening grounding
   checks or creating a partial conversation.
+- Intentionally underspecified questions have an explicit safe path that does
+  not depend on repeated citation-validation failures.
 - A successful request can make more than one paid generation call. Its known
   token totals reflect citation-invalid attempts rather than hiding their cost.
 - Provider failures that expose no usage can still make successful request
@@ -56,8 +61,8 @@ limit would create unpredictable cost and latency.
 
 ## Out of scope
 
-This decision does not change the prompt, add model-specific correction
-messages, retry authentication or invalid requests, create failure telemetry
+This decision does not add model-specific correction messages, retry
+authentication or invalid requests, create failure telemetry
 rows, rerun the paid acceptance set automatically, deploy the application, or
 change the hosted database.
 

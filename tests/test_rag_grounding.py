@@ -46,6 +46,13 @@ def test_grounded_input_serializes_untrusted_data_separately() -> None:
     assert "untrusted data" in GROUNDED_ANSWER_INSTRUCTIONS
 
 
+def test_instructions_require_clarification_for_ambiguous_questions() -> None:
+    assert "ambiguous, underspecified" in GROUNDED_ANSWER_INSTRUCTIONS
+    assert "ask one concise clarifying question" in GROUNDED_ANSWER_INSTRUCTIONS
+    assert "set abstained to true" in GROUNDED_ANSWER_INSTRUCTIONS
+    assert "do not infer" in GROUNDED_ANSWER_INSTRUCTIONS
+
+
 def test_citation_validation_accepts_only_retrieved_ids_in_inline_markers() -> None:
     first = chunk()
     second = chunk()

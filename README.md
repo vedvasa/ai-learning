@@ -353,6 +353,9 @@ all schema-valid attempts; the final provider request ID remains the one attache
 to the accepted answer. Other invalid-output operations remain non-retryable by
 default. See
 [ADR 0013](docs/decisions/0013-bounded-grounding-validation-retries.md).
+The grounded prompt explicitly treats missing context, requirements, or user
+preferences as ambiguity: it asks one concise clarifying question with
+`abstained=true` and no citations instead of inventing a recommendation.
 
 ## OpenAI connectivity check
 
