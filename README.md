@@ -345,6 +345,15 @@ leakage, latency, tokens, attempts, and failures; it deliberately does not claim
 semantic answer correctness without human review. See
 [ADR 0012](docs/decisions/0012-versioned-local-rag-acceptance-evaluation.md).
 
+The grounded-answer reliability increment also treats application-detected
+invalid citations as retryable invalid model output. Citation validation occurs
+inside each bounded attempt, so no rejected answer can be returned or persisted.
+Successful retries expose the combined known provider latency and tokens from
+all schema-valid attempts; the final provider request ID remains the one attached
+to the accepted answer. Other invalid-output operations remain non-retryable by
+default. See
+[ADR 0013](docs/decisions/0013-bounded-grounding-validation-retries.md).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

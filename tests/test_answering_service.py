@@ -6,7 +6,11 @@ from uuid import uuid4
 
 import pytest
 
-from app.providers.base import GroundedAnswerResult, ProviderRegistry
+from app.providers.base import (
+    GroundedAnswerResult,
+    ProviderErrorKind,
+    ProviderRegistry,
+)
 from app.rag.repository import RetrievedChunk, StoredAnswerExchange
 from app.schemas.answering import GroundedAnswerDraft
 from app.services.answering import GroundedAnswerService, GroundingError
@@ -51,21 +55,25 @@ class FakeProvider:
     name = "openai"
     model = "gpt-test"
 
-    def __init__(self, draft: GroundedAnswerDraft) -> None:
-        self.draft = draft
+    def __init__(
+        self,
+        draft: GroundedAnswerDraft | list[GroundedAnswerDraft],
+    ) -> None:
+        self.drafts = draft if isinstance(draft, list) else [draft]
         self.inputs = []
 
     async def answer_grounded(self, serialized_input):
         self.inputs.append(serialized_input)
+        draft_index = min(len(self.inputs) - 1, len(self.drafts) - 1)
         return GroundedAnswerResult(
-            draft=self.draft,
+            draft=self.drafts[draft_index],
             provider="openai",
             model=self.model,
             latency_ms=15.5,
             input_tokens=100,
             output_tokens=30,
             finish_reason="completed",
-            provider_request_id="provider-answer-123",
+            provider_request_id=f"provider-answer-{len(self.inputs)}",
         )
 
 
@@ -84,12 +92,18 @@ class FakeRepository:
         )
 
 
-def service(provider, retriever, repository) -> GroundedAnswerService:
+def service(
+    provider,
+    retriever,
+    repository,
+    *,
+    max_attempts: int = 1,
+) -> GroundedAnswerService:
     return GroundedAnswerService(
         registry=ProviderRegistry([provider]),
         retriever=retriever,
         repository=repository,
-        retry_policy=RetryPolicy(1, 0, 0, 0),
+        retry_policy=RetryPolicy(max_attempts, 0, 0, 0),
         timeout_seconds=2,
         tenant_id="server-tenant",
     )
@@ -169,7 +183,56 @@ def test_service_rejects_unretrieved_citation_before_persistence() -> None:
     )
     repository = FakeRepository()
 
-    with pytest.raises(GroundingError):
-        run_answer(service(provider, FakeRetriever([match()]), repository))
+    with pytest.raises(GroundingError) as caught:
+        run_answer(
+            service(
+                provider,
+                FakeRetriever([match()]),
+                repository,
+                max_attempts=3,
+            )
+        )
 
+    assert caught.value.kind is ProviderErrorKind.INVALID_OUTPUT
+    assert caught.value.attempt_count == 3
+    assert len(provider.inputs) == 3
     assert repository.saved == []
+
+
+def test_service_retries_invalid_citation_and_persists_only_valid_answer() -> None:
+    evidence = match()
+    provider = FakeProvider(
+        [
+            GroundedAnswerDraft(
+                answer=f"Unsupported [source:{uuid4()}].",
+                abstained=False,
+            ),
+            GroundedAnswerDraft(
+                answer=f"It lasts 30 minutes [source:{evidence.chunk_id}].",
+                abstained=False,
+            ),
+        ]
+    )
+    repository = FakeRepository()
+
+    outcome = run_answer(
+        service(
+            provider,
+            FakeRetriever([evidence]),
+            repository,
+            max_attempts=2,
+        )
+    )
+
+    assert len(provider.inputs) == 2
+    assert outcome.attempt_count == 2
+    assert outcome.sources == (evidence,)
+    assert outcome.generation_latency_ms == 31
+    assert outcome.generation_input_tokens == 200
+    assert outcome.generation_output_tokens == 60
+    assert outcome.provider_request_id == "provider-answer-2"
+    assert len(repository.saved) == 1
+    generation_call = repository.saved[0]["generation_call"]
+    assert generation_call.latency_ms == 31
+    assert generation_call.input_tokens == 200
+    assert generation_call.output_tokens == 60

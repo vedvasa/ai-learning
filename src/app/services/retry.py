@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from random import random
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, AbstractSet, Generic, TypeVar
 
 from app.providers.base import ProviderError, ProviderErrorKind
 
@@ -76,6 +76,7 @@ async def call_with_retry(
     policy: RetryPolicy,
     timeout_seconds: float,
     on_retry: OnRetry | None = None,
+    retryable_errors: AbstractSet[ProviderErrorKind] = RETRYABLE_PROVIDER_ERRORS,
     sleep: Sleep = asyncio.sleep,
     random_value: RandomValue = random,
 ) -> RetryOutcome[ResultT]:
@@ -89,7 +90,7 @@ async def call_with_retry(
         except ProviderError as error:
             error.attempt_count = attempt
             if (
-                error.kind not in RETRYABLE_PROVIDER_ERRORS
+                error.kind not in retryable_errors
                 or attempt >= policy.max_attempts
             ):
                 raise

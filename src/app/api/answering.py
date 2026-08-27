@@ -15,7 +15,7 @@ from app.schemas.answering import (
     AnswerQuestionResponse,
     CitationSource,
 )
-from app.services.answering import GroundedAnswerService, GroundingError
+from app.services.answering import GroundedAnswerService
 from app.services.retrieval import RetrievalError, RetrievalErrorKind
 from app.services.retry import RetryDeadlineExceeded
 
@@ -83,13 +83,6 @@ async def answer_question(
         ) from error
     except ProviderError as error:
         mapped = PROVIDER_ERROR_RESPONSES[error.kind]
-        raise ApplicationError(
-            code=mapped.code,
-            message=mapped.message,
-            status_code=mapped.status_code,
-        ) from error
-    except GroundingError as error:
-        mapped = PROVIDER_ERROR_RESPONSES[ProviderErrorKind.INVALID_OUTPUT]
         raise ApplicationError(
             code=mapped.code,
             message=mapped.message,
