@@ -178,6 +178,29 @@ from the corrected revision also passed the provider-key-pattern hygiene check.
 See the [Week 2 deployment evidence](evidence/week-2/README.md) for the public
 checks, configuration assertions, and bootstrap limitation.
 
+## Verified Week 3 release
+
+After PR 28 merged, the user explicitly ran the documented release command. The
+Week 3 release completed on August 26, 2026:
+
+- application commit: `b09ff2a40b6a592653a6575378c2cbeef7ea7877`;
+- Cloud Build: `ed03400f-8882-4404-97ed-796b12f387b3` (`SUCCESS`);
+- Cloud Run revision: `ai-learning-git-b09ff2a40b6a`;
+- image digest: `sha256:68464163d980c6b2cef80c54d3f5f2492688212591b11e11c3f376cc75b5b6d5`;
+- traffic: 100% to the verified revision, with the Week 2 revision retained at
+  0%; and
+- provider model calls: zero during build and smoke verification.
+
+Both offline datasets passed in Cloud Build. Candidate and public smoke tests
+confirmed the three configured secrets, Citation Q&A UI wiring, and RAG API
+contracts without calling Postgres or a provider. One explicit paid browser
+acceptance request then retrieved three public corpus chunks, returned three
+verified citations, and reported successful persistence.
+
+See the [Week 3 deployment evidence](evidence/week-3/README.md) for the immutable
+release chain, full 20-question aggregate evaluation, browser screenshot,
+runtime boundary, and honest limitations.
+
 ## Runtime and cost controls
 
 The release explicitly configures:
