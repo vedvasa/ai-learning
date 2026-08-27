@@ -361,10 +361,11 @@ preferences as ambiguity: it asks one concise clarifying question with
 
 The Week 3 Cloud Run release extends the staged deployment with the remote
 database secret and provider-free checks for the Citation Q&A UI and API routes.
-See [ADR 0014](docs/decisions/0014-pinned-database-secret-readiness.md) and the
-[Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md). The PR prepares
-this release; creating the secret and running the deployment remain explicit
-post-merge operator actions.
+The immutable revision is live, its candidate and public smoke tests passed,
+and one deployed grounded answer returned three verified sources and persisted
+successfully. See the [Week 3 deployment evidence](docs/evidence/week-3/README.md),
+[ADR 0014](docs/decisions/0014-pinned-database-secret-readiness.md), and the
+[Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md).
 
 ## OpenAI connectivity check
 

@@ -8,7 +8,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 |---:|---|---|---|---|---|---:|---|
 | 1 | PromptBench | Complete | [Live](https://ai-learning-promptbench.onrender.com/) | [`v0.1.0`](https://github.com/vedvasa/ai-learning/tree/v0.1.0) | 5/5 sample calls; safe 502 and recovery | $0.00070 measured | HTTP/SSE boundaries, direct SDKs, safe errors, deployment, and cold starts |
 | 2 | Ticket Triage API | Complete | [Live](https://ai-learning-3y5vyfqynq-uw.a.run.app/) | [`v0.2.0`](https://github.com/vedvasa/ai-learning/tree/v0.2.0) | 136 tests; 2/2 deployed calls; schema-valid but policy-label disagreement | $0.001634 measured | Typed output, guarded evaluation, staged recovery, and semantic evaluation |
-| 3 | Citation Q&A | In progress |  |  | Grounded API unit and local DB tests | $0.00 recorded | Retrieval, verifiable citations, and atomic persistence |
+| 3 | Citation Q&A | Complete | [Live](https://ai-learning-3y5vyfqynq-uw.a.run.app/) | [`v0.3.0`](https://github.com/vedvasa/ai-learning/tree/v0.3.0) | 20/20 completed; 100% retrieval hits and citation validity | Tokens recorded; price not reconciled | Data-first RAG, guarded ingestion, retrieval evaluation, and citation validation |
 | 4 | RAG Quality Lab | Not started |  |  |  | $0.00 |  |
 | 5 | Support Action Agent | Not started |  |  |  | $0.00 |  |
 | 6 | Deep Research Jobs | Not started |  |  |  | $0.00 |  |
@@ -17,7 +17,7 @@ Use this with the detailed curriculum in PRODUCTION_AI_SELF_LEARNING_GUIDE.md. U
 | 9 | Operated AI Service | Not started |  |  |  | $0.00 |  |
 | 10 | Capstone release | Not started |  |  |  | $0.00 |  |
 
-Total model spend: **At least $0.00234 measured**
+Total model spend: **At least $0.00234 measured; Week 3 price not reconciled**
 
 Cloud spend: **Not yet reconciled; budget alert and free-trial/free-tier guardrails are active**
 
@@ -228,6 +228,117 @@ are still needed to decide whether the data is correct.
 
 Week 3 should introduce durable Postgres storage and citation-grounded retrieval
 without coupling API routes directly to a specific database or vector engine.
+
+### Week 3 — Citation Q&A
+
+- **Dates:** 2026-08-22 to 2026-08-26
+- **Release tag:** [`v0.3.0`](https://github.com/vedvasa/ai-learning/tree/v0.3.0)
+- **Live URL:** [ai-learning-3y5vyfqynq-uw.a.run.app](https://ai-learning-3y5vyfqynq-uw.a.run.app/)
+- **Deployment revision:** `ai-learning-git-b09ff2a40b6a`
+- **Schema/migration version:** `20260825045940_create_knowledge_schema.sql`
+- **Prompt/evaluation dataset version:** 20 fictional questions, SHA-256 `7cd6be7d6af670adf4b9accab489d9cb1bcb154561cce61339c2a4dfb3e3d775`
+
+#### Intended outcome
+
+A user can ask a support question in the deployed browser application and
+receive an answer grounded only in public chunks retrieved from the fictional
+knowledge base, with inline citations that map to verified source cards.
+
+#### Architecture change
+
+Added a private Supabase Postgres/pgvector schema, versioned and idempotent
+document ingestion, exact semantic retrieval, provider-neutral grounded-answer
+generation, fail-closed citation validation, atomic conversation persistence,
+bounded grounding retries, a versioned acceptance evaluator, and the default
+Citation Q&A browser workspace. Cloud Run now receives a pinned database secret
+through its dedicated runtime identity.
+
+#### Evidence
+
+- CI run: [PR #28 checks](https://github.com/vedvasa/ai-learning/actions/runs/33043202937)
+- Test summary: 207 tests passed locally; both GitHub test jobs passed
+- Evaluation and deployment report: [Week 3 evidence](docs/evidence/week-3/README.md)
+- Dataset validation: 20/20 fictional cases; hash recorded above
+- Cloud Build: `ed03400f-8882-4404-97ed-796b12f387b3` (`SUCCESS`)
+- Browser acceptance: [grounded answer with three verified sources](docs/evidence/week-3/grounded-answer.png)
+- Architecture decisions: ADRs 0008 through 0014
+
+#### Quality and operations
+
+| Signal | Result | Target | Pass? |
+|---|---:|---:|---|
+| Unit/integration tests | 207 passed locally; 6 DB tests skipped locally and exercised in CI | All configured tests pass | Yes |
+| Evaluation completion | 20/20; 0 failures | 20/20 | Yes |
+| Answerable retrieval hit rate at k | 100% | Relevant source for most answerable questions | Yes |
+| Answerable answer rate | 100% | Baseline | — |
+| Ambiguous abstention rate | 75% | Descriptive baseline | — |
+| Unanswerable abstention rate | 100% | Usually abstain | Yes |
+| Citation validity | 100% | 100% | Yes |
+| Forbidden-document leakage | 0 cases | 0 | Yes |
+| p50 / p95 duration | 2.00 s / 3.45 s | Baseline only | — |
+| Deployed browser acceptance | 1/1 successful; 3 verified sources | 1/1 | Yes |
+
+These results measure the application contract on a small fictional set. They
+do not establish semantic answer quality, a production SLO, or behavior on
+real customer questions.
+
+#### Cost
+
+| Provider/service | Calls or usage | Cost |
+|---|---:|---:|
+| OpenAI embeddings, 20-case evaluation | 266 input tokens | Not reconciled |
+| OpenAI generation, 20-case evaluation | 18,749 input / 1,995 output tokens | Not reconciled |
+| OpenAI deployed acceptance | 1 embedding plus 939 input / 176 output generation tokens | Not reconciled |
+| Anthropic | 0 Week 3 acceptance calls | $0.00 |
+| Cloud and Supabase | Guardrails active; invoices not reconciled | Not claimed |
+
+The report deliberately records usage without hardcoding prices that can change
+independently of the repository.
+
+#### Failure drill
+
+Application-detected invalid citations are classified as retryable invalid
+model output. Tests prove that rejected answers are neither returned nor
+persisted, retries remain inside the shared attempt/deadline budget, and only a
+validated answer can commit. No destructive live failure was injected into the
+public service. The release retained the known-good Week 2 revision and printed
+an exact rollback command.
+
+#### Security/privacy check
+
+- Provider and database credentials remained in explicit Secret Manager
+  versions and out of Git, Cloud Build input, images, browser code, and logs.
+- The browser cannot override the server-owned tenant or database connection.
+- Unauthenticated retrieval permits only public documents; the acceptance set
+  observed zero forbidden-document leakage.
+- The committed corpus and evaluation questions are fictional.
+- Conversation content is persisted intentionally for the learning exercise;
+  the public service must never receive real customer data.
+
+#### What I learned
+
+Production RAG is a data and validation system around model calls. Reproducible
+schema, versioned ingestion, embedding compatibility, retrieval filters,
+verifiable citations, abstention, atomic writes, and measured acceptance gates
+matter as much as prompt construction.
+
+#### Known limitations
+
+- The corpus and 20-question evaluation are too small for broad quality claims.
+- Retrieval uses an exact scan; approximate and hybrid retrieval are deferred
+  until Week 4 has measurements that can justify them.
+- Answer correctness was not human-scored.
+- Readiness proves configuration presence, not live database connectivity.
+- The public service has no authentication or rate limit.
+- A new revision cold-started against persistent data, but an explicit
+  same-revision restart drill was not performed.
+- Provider and cloud bills were not reconciled.
+
+#### Next decision
+
+Week 4 should measure retrieval quality before adding hybrid search,
+reranking, or approximate indexing, and should adopt only changes that improve
+a chosen metric.
 
 ### Weekly release template
 
