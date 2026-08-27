@@ -163,13 +163,17 @@ def test_service_abstains_without_generation_when_retrieval_is_empty() -> None:
 
 def test_service_accepts_provider_abstention_without_citations() -> None:
     provider = FakeProvider(
-        GroundedAnswerDraft(answer="There is not enough evidence.", abstained=True)
+        GroundedAnswerDraft(
+            answer="Which outcome matters most for your workspace?",
+            abstained=True,
+        )
     )
     repository = FakeRepository()
 
     outcome = run_answer(service(provider, FakeRetriever([match()]), repository))
 
     assert outcome.abstained is True
+    assert outcome.answer.endswith("workspace?")
     assert outcome.sources == ()
     assert repository.saved[0]["citations"] == ()
 
