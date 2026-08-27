@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from app.providers.base import (
     GroundedAnswerResult,
     ProviderError,
+    ProviderErrorKind,
     ProviderName,
     ProviderRegistry,
 )
@@ -24,13 +25,34 @@ from app.rag.repository import (
     StoredAnswerExchange,
 )
 from app.services.retrieval import RetrievalOutcome, SemanticRetriever
-from app.services.retry import RetryOutcome, RetryPolicy, call_with_retry
+from app.services.retry import (
+    RETRYABLE_PROVIDER_ERRORS,
+    RetryOutcome,
+    RetryPolicy,
+    call_with_retry,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class GroundingError(RuntimeError):
+GROUNDED_RETRYABLE_ERRORS = RETRYABLE_PROVIDER_ERRORS | {
+    ProviderErrorKind.INVALID_OUTPUT
+}
+
+
+class GroundingError(ProviderError):
     """Provider output passed schema validation but failed grounding checks."""
+
+    def __init__(
+        self,
+        _detail: str = "provider citations failed validation",
+        *,
+        provider_request_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            ProviderErrorKind.INVALID_OUTPUT,
+            provider_request_id=provider_request_id,
+        )
 
 
 class AnswerRepository(Protocol):
@@ -62,6 +84,12 @@ class GroundedAnswerOutcome:
     provider_request_id: str | None
     attempt_count: int
     retrieval: RetrievalOutcome
+
+
+@dataclass(frozen=True, slots=True)
+class ValidatedGroundedAnswer:
+    result: GroundedAnswerResult
+    sources: tuple[RetrievedChunk, ...]
 
 
 class GroundedAnswerService:
@@ -146,21 +174,41 @@ class GroundedAnswerService:
                 error.provider_request_id,
             )
 
+        observed_results: list[GroundedAnswerResult] = []
+
+        async def generate_validated_answer() -> ValidatedGroundedAnswer:
+            result = await provider.answer_grounded(serialized_input)
+            observed_results.append(result)
+            return ValidatedGroundedAnswer(
+                result=result,
+                sources=_validated_sources(result, retrieval.matches),
+            )
+
         retry_outcome = await call_with_retry(
-            lambda: provider.answer_grounded(serialized_input),
+            generate_validated_answer,
             policy=self._retry_policy,
             timeout_seconds=self._timeout_seconds,
             on_retry=log_retry,
+            retryable_errors=GROUNDED_RETRYABLE_ERRORS,
         )
-        result = retry_outcome.value
-        sources = _validated_sources(result, retrieval.matches)
+        result = retry_outcome.value.result
+        sources = retry_outcome.value.sources
+        generation_latency_ms = sum(
+            attempt.latency_ms for attempt in observed_results
+        )
+        generation_input_tokens = sum(
+            attempt.input_tokens for attempt in observed_results
+        )
+        generation_output_tokens = sum(
+            attempt.output_tokens for attempt in observed_results
+        )
         generation_call = AnswerGenerationCall(
             request_id=uuid4(),
             provider=result.provider,
             model=result.model,
-            latency_ms=result.latency_ms,
-            input_tokens=result.input_tokens,
-            output_tokens=result.output_tokens,
+            latency_ms=generation_latency_ms,
+            input_tokens=generation_input_tokens,
+            output_tokens=generation_output_tokens,
         )
         stored = await asyncio.to_thread(
             self._repository.save_answer_exchange,
@@ -177,6 +225,9 @@ class GroundedAnswerService:
             retry_outcome=retry_outcome,
             sources=sources,
             retrieval=retrieval,
+            generation_latency_ms=generation_latency_ms,
+            generation_input_tokens=generation_input_tokens,
+            generation_output_tokens=generation_output_tokens,
         )
 
 
@@ -191,7 +242,9 @@ def _validated_sources(
             matches=matches,
         )
     except CitationValidationError as error:
-        raise GroundingError("provider citations failed validation") from error
+        raise GroundingError(
+            provider_request_id=result.provider_request_id
+        ) from error
     match_by_id = {match.chunk_id: match for match in matches}
     return tuple(match_by_id[citation_id] for citation_id in citation_ids)
 
@@ -200,9 +253,12 @@ def _outcome_from_generation(
     *,
     stored: StoredAnswerExchange,
     result: GroundedAnswerResult,
-    retry_outcome: RetryOutcome[GroundedAnswerResult],
+    retry_outcome: RetryOutcome[ValidatedGroundedAnswer],
     sources: tuple[RetrievedChunk, ...],
     retrieval: RetrievalOutcome,
+    generation_latency_ms: float,
+    generation_input_tokens: int,
+    generation_output_tokens: int,
 ) -> GroundedAnswerOutcome:
     return GroundedAnswerOutcome(
         conversation_id=stored.conversation_id,
@@ -212,9 +268,9 @@ def _outcome_from_generation(
         provider=result.provider,
         model=result.model,
         generation_performed=True,
-        generation_latency_ms=result.latency_ms,
-        generation_input_tokens=result.input_tokens,
-        generation_output_tokens=result.output_tokens,
+        generation_latency_ms=generation_latency_ms,
+        generation_input_tokens=generation_input_tokens,
+        generation_output_tokens=generation_output_tokens,
         finish_reason=result.finish_reason,
         provider_request_id=result.provider_request_id,
         attempt_count=retry_outcome.attempt_count,

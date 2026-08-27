@@ -6,6 +6,7 @@ import pytest
 
 from app.providers.base import ProviderError, ProviderErrorKind
 from app.services.retry import (
+    RETRYABLE_PROVIDER_ERRORS,
     RetryDeadlineExceeded,
     RetryPolicy,
     call_with_retry,
@@ -94,6 +95,33 @@ def test_non_retryable_provider_errors_fail_once(
     assert calls == 1
     assert caught.value.kind is error_kind
     assert caught.value.attempt_count == 1
+
+
+def test_caller_can_opt_in_to_retry_invalid_output() -> None:
+    calls = 0
+
+    async def operation() -> str:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ProviderError(ProviderErrorKind.INVALID_OUTPUT)
+        return "validated result"
+
+    outcome = asyncio.run(
+        call_with_retry(
+            operation,
+            policy=policy(base_delay_seconds=0),
+            timeout_seconds=5,
+            retryable_errors=(
+                RETRYABLE_PROVIDER_ERRORS
+                | {ProviderErrorKind.INVALID_OUTPUT}
+            ),
+        )
+    )
+
+    assert outcome.value == "validated result"
+    assert outcome.attempt_count == 2
+    assert calls == 2
 
 
 def test_retryable_error_stops_at_max_attempts() -> None:

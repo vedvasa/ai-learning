@@ -132,6 +132,15 @@ evidence text. The default browser workspace exercises the same endpoint and
 renders application-verified citations as numbered links to source cards. A
 browser submission has the same paid-call boundary as the `curl` example.
 
+Citation validation is part of the bounded generation attempt. If a provider
+returns a structurally valid draft with missing, malformed, or unretrieved
+citations, the application categorizes it as invalid output and may retry within
+the existing `LLM_MAX_ATTEMPTS` and total `LLM_TIMEOUT_SECONDS` budget. A
+successful response reports and stores the combined known provider latency and
+token usage from every schema-valid attempt, including rejected citation drafts.
+Provider failures that do not return usage can still make those totals a lower
+bound. Exhausted invalid output fails closed and stores no conversation.
+
 ## Validate and run the Week 3 acceptance set
 
 The committed acceptance set contains exactly 20 fictional questions: 12
@@ -149,7 +158,8 @@ database connection, or construct an OpenAI or Anthropic client.
 A live evaluation uses the same retrieval, grounding, citation validation, and
 atomic persistence path as `POST /api/answer`. It therefore makes a paid OpenAI
 embedding call for every selected case, usually makes a paid generation call,
-and stores each completed fictional exchange in the configured database. Start
+and can make additional bounded generation attempts after invalid citations. It
+stores each completed fictional exchange in the configured database. Start
 with the default category-balanced three-case sample against local Supabase:
 
 ```bash
