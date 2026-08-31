@@ -8,6 +8,7 @@ assistant built through ten incremental releases.
 
 - [Production AI self-learning guide](PRODUCTION_AI_SELF_LEARNING_GUIDE.md)
 - [Learning progress tracker](LEARNING_PROGRESS_TRACKER.md)
+- [Current milestone and next-task handoff](docs/CURRENT_MILESTONE.md)
 
 ## Local setup
 
