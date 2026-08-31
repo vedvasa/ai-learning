@@ -25,6 +25,7 @@ requirements or architectural history.
 
 - `PRODUCTION_AI_SELF_LEARNING_GUIDE.md`: roadmap and target architecture.
 - `docs/CURRENT_MILESTONE.md`: active objective, constraints, and next handoff.
+- `docs/CODEX_SESSION_PROMPTS.md`: reusable opening and handoff prompts.
 - `README.md`: behavior and architecture that actually exist today.
 - `LEARNING_PROGRESS_TRACKER.md`: completed releases, evidence, and lessons.
 - `docs/decisions/`: durable architectural reasoning.

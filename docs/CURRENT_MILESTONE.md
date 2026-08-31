@@ -115,6 +115,10 @@ because they are popular.
 
 ## Suggested opening prompt for the next Codex task
 
+The reusable opening and closing templates live in
+[`CODEX_SESSION_PROMPTS.md`](CODEX_SESSION_PROMPTS.md). For objective 4.1, use
+this ready-to-copy version:
+
 ```text
 We are starting objective 4.1 of the ai-learning project.
 
