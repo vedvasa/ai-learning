@@ -43,7 +43,8 @@ the reasoning behind the current design.
 ## Current objective: 4.1a golden dataset foundation and human checkpoint
 
 The provider-free foundation is implemented on
-`codex/objective-4-1a-golden-foundation` (PR not yet opened):
+`codex/objective-4-1a-golden-foundation` at implementation commit `3bec477`
+(PR not yet opened):
 
 - a separate strict Week 4 retrieval schema defines fictional tenant/user
   context, version-and-content-hash-pinned document references, key answer
