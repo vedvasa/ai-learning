@@ -129,6 +129,7 @@ Validate the offline datasets without provider clients or database connections:
 ```bash
 uv run --no-sync triage-batch --validate-only
 uv run --no-sync rag-evaluation --validate-only
+uv run --no-sync rag-golden-dataset
 ```
 
 With Docker available, validate the production image without secrets:

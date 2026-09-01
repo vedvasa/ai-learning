@@ -201,6 +201,92 @@ Anthropic calls. Live ingestion and `/api/retrieve` make paid OpenAI embeddings
 calls. `/api/answer` also makes a paid generation call unless retrieval returns
 no evidence; the corresponding instructions identify each boundary.
 
+## Author the first ten Week 4 retrieval labels
+
+Objective 4.1a deliberately commits an incomplete worksheet at
+`datasets/rag-evaluation/week4_human_labels.json`. Its ten `"label"` values are
+all `null`. The project owner must author those ten reference labels without
+model assistance before the dataset is expanded or any model-assisted labeling
+begins.
+
+Install the current branch and confirm that the blank scaffold and corpus are
+valid without loading settings, opening Postgres, or constructing a provider
+client:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync rag-golden-dataset
+```
+
+Print copyable stable document-reference objects plus their visibility. This
+command reports committed metadata and normalized-content hashes, but omits
+document content:
+
+```bash
+uv run --no-sync rag-golden-dataset --print-corpus-manifest
+```
+
+Read the fictional Markdown files in `datasets/knowledge-base/` yourself. For
+each slot, replace `"label": null` with this shape, supplying your own question,
+relevance judgment, answer facts, category, difficulty, and notes:
+
+```json
+{
+  "case_id": "<human-authored-stable-case-id>",
+  "question": "<human-authored fictional question>",
+  "context": {
+    "tenant_id": "knowledgedesk-demo",
+    "principal_id": "fictional-public-user",
+    "principal_type": "anonymous",
+    "allowed_visibilities": ["public"]
+  },
+  "expected_relevant_documents": [
+    {
+      "tenant_id": "<copy from the corpus manifest>",
+      "document_key": "<copy from the corpus manifest>",
+      "document_version": 1,
+      "content_sha256": "<copy from the corpus manifest>"
+    }
+  ],
+  "key_answer_facts": ["<human-authored fact required for a correct answer>"],
+  "should_abstain": false,
+  "category": "direct_fact",
+  "difficulty": "easy",
+  "adversarial_notes": null,
+  "label_provenance": {
+    "origin": "human",
+    "annotator_role": "project_owner",
+    "labeled_on": "<YYYY-MM-DD>",
+    "human_reviewed": true
+  }
+}
+```
+
+Copy each manifest `reference` object exactly; declared document versions vary
+across a corpus even though the example shape above shows version `1`.
+
+Use only fictional principal IDs beginning with `fictional-`; do not add a
+name, email address, account ID, or other personal provenance. Available
+categories are `direct_fact`, `multi_document`, `ambiguous`, `unanswerable`,
+`adversarial`, and `privacy_boundary`, and all six must appear at least once.
+`direct_fact` requires exactly one relevant document and `multi_document`
+requires at least two. `adversarial` and `privacy_boundary` require notes.
+Cases that should abstain must leave both `expected_relevant_documents` and
+`key_answer_facts` empty. An anonymous user may reference only public documents;
+a privacy-boundary request for internal data should expect abstention rather
+than naming the internal document as retrievable evidence.
+
+Run the strict completion gate after all ten slots are authored:
+
+```bash
+uv run --no-sync rag-golden-dataset --require-complete
+```
+
+The command must report ten validated labels and a canonical dataset SHA-256.
+At that point, stop and record the hash for review. Do not ask a model to create,
+rewrite, or complete these first ten labels, and do not expand toward 40 cases
+until the human reference batch has been reviewed as its own increment.
+
 ## Hosted-project boundary
 
 Do not run `supabase link`, `supabase db push`, paste a database connection

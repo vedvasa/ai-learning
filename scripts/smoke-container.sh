@@ -46,6 +46,7 @@ fi
 
 docker run --rm --entrypoint triage-batch "$IMAGE" --validate-only
 docker run --rm --entrypoint rag-evaluation "$IMAGE" --validate-only
+docker run --rm --entrypoint rag-golden-dataset "$IMAGE"
 
 docker run \
   --detach \

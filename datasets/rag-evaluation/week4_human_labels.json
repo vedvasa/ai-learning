@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "purpose": "golden",
+  "dataset_name": "KnowledgeDesk Week 4 golden retrieval dataset",
+  "dataset_version": "week4-v1",
+  "slots": [
+    {"slot_number": 1, "label": null},
+    {"slot_number": 2, "label": null},
+    {"slot_number": 3, "label": null},
+    {"slot_number": 4, "label": null},
+    {"slot_number": 5, "label": null},
+    {"slot_number": 6, "label": null},
+    {"slot_number": 7, "label": null},
+    {"slot_number": 8, "label": null},
+    {"slot_number": 9, "label": null},
+    {"slot_number": 10, "label": null}
+  ]
+}

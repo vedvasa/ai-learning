@@ -26,6 +26,7 @@ openai-check = "ai_learning.openai_check:main"
 triage-batch = "ai_learning.triage_batch:main"
 ingest-documents = "ai_learning.ingest_documents:main"
 rag-evaluation = "ai_learning.rag_evaluation:main"
+rag-golden-dataset = "ai_learning.golden_retrieval:main"
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
