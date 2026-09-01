@@ -369,6 +369,34 @@ successfully. See the [Week 3 deployment evidence](docs/evidence/week-3/README.m
 [ADR 0014](docs/decisions/0014-pinned-database-secret-readiness.md), and the
 [Cloud Run deployment runbook](docs/CLOUD_RUN_DEPLOYMENT.md).
 
+## Week 4: golden retrieval dataset foundation
+
+Objective 4.1a adds a separate, provider-free contract for deeper retrieval
+labels while preserving the Week 3 acceptance dataset unchanged. Each completed
+case carries fictional tenant/user context, version-and-content-hash-pinned
+document references, key answer facts, an abstention expectation, category,
+difficulty, adversarial notes where applicable, and closed non-personal label
+provenance. Validation rejects duplicate cases, incomplete category coverage,
+missing or stale corpus references, cross-tenant references, and documents
+outside the user's visibility scope.
+
+The committed Week 4 worksheet contains ten explicitly blank human-label slots.
+Codex and models must not fill them. Validate the blank scaffold for free with:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync rag-golden-dataset
+```
+
+After the project owner has authored all ten labels, the stronger
+`rag-golden-dataset --require-complete` gate verifies the completed schema,
+category coverage, corpus pins, and canonical dataset SHA-256 without loading
+settings, connecting to Postgres, or constructing a provider client. Follow the
+[local database and evaluation runbook](docs/DATABASE_DEVELOPMENT.md) for the
+exact human-labeling workflow. See
+[ADR 0015](docs/decisions/0015-human-first-versioned-golden-retrieval-contract.md)
+for the provenance, staleness, privacy, and hashing decisions.
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

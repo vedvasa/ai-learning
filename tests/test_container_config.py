@@ -82,6 +82,7 @@ def test_container_scripts_are_executable_and_follow_runtime_contract() -> None:
     assert "exec uvicorn" in start_script
     assert "triage-batch \"$IMAGE\" --validate-only" in smoke_script
     assert "rag-evaluation \"$IMAGE\" --validate-only" in smoke_script
+    assert "rag-golden-dataset \"$IMAGE\"" in smoke_script
     assert 'fetch(\"/api/answer\"' in smoke_script
     assert "/health/live" in smoke_script
     assert "/health/ready" in smoke_script

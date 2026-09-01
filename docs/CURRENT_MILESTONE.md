@@ -1,8 +1,9 @@
 # Current milestone: Week 4 RAG Quality Lab
 
-Last updated: 2026-08-30
+Last updated: 2026-09-01
 
-Status: Ready to start in a fresh Codex task.
+Status: Objective 4.1a foundation implemented; waiting for the project owner to
+author the first ten golden labels.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -39,7 +40,66 @@ The detailed requirements remain in the
 See `docs/evidence/week-3/README.md` and ADRs 0008 through 0014 for evidence and
 the reasoning behind the current design.
 
-## Current objective: 4.1 golden retrieval dataset and baseline
+## Current objective: 4.1a golden dataset foundation and human checkpoint
+
+The provider-free foundation is implemented on
+`codex/objective-4-1a-golden-foundation` (PR not yet opened):
+
+- a separate strict Week 4 retrieval schema defines fictional tenant/user
+  context, version-and-content-hash-pinned document references, key answer
+  facts, abstention, six categories, difficulty, adversarial notes, and closed
+  non-personal provenance;
+- validation rejects duplicate cases, missing category coverage, missing or
+  stale corpus references, cross-tenant references, and expected documents
+  outside the user's visibility scope;
+- the canonical dataset hash is computed only from strict validated data;
+- `datasets/rag-evaluation/week4_human_labels.json` contains exactly ten
+  sequential slots whose labels are all intentionally `null`;
+- `rag-golden-dataset` validates the scaffold and prints a content-free corpus
+  reference manifest, while `--require-complete` fails until all ten labels form
+  a valid human-authored dataset; and
+- isolated fixtures are marked `contract_test` / `synthetic_test`, cannot be
+  accepted as golden data, and exercise the completed form deterministically.
+
+ADR 0015 records the provenance, privacy, staleness, and hashing decisions. The
+exact human-only labeling workflow is in `docs/DATABASE_DEVELOPMENT.md`.
+
+### Required human checkpoint
+
+The project owner must now author all ten blank labels directly from the
+fictional corpus, without model assistance. Start with:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync rag-golden-dataset
+uv run --no-sync rag-golden-dataset --print-corpus-manifest
+```
+
+After editing the worksheet, run:
+
+```bash
+uv run --no-sync rag-golden-dataset --require-complete
+```
+
+Stop after that command reports ten valid labels and a canonical dataset hash.
+Do not begin model-assisted labeling, create the remaining 30 cases, capture a
+paid vector baseline, or implement retrieval experiments in this increment.
+
+### Provider-free verification on 2026-09-01
+
+- `uv sync --locked --no-editable --reinstall-package ai-learning` succeeded.
+- `uv run --no-sync pytest` passed: 224 passed and 6 local database tests
+  skipped because no disposable Supabase stack was running.
+- The triage dataset retained canonical SHA-256
+  `334f962322f5845b23c18c19e4ae5e7b83682f723818512d40d8d7a104a52c63`.
+- The unchanged Week 3 RAG dataset retained its recorded canonical SHA-256
+  `7cd6be7d6af670adf4b9accab489d9cb1bcb154561cce61339c2a4dfb3e3d775`.
+- The blank Week 4 worksheet validated as 0/10 complete with worksheet SHA-256
+  `b8c51ea99a6c0f2d87836d0f5c3b4b7c08484bdee456eda9f579a7842dd0eb04`.
+- Shell syntax checks passed. Container build/smoke was not run because the
+  local Docker daemon was unavailable.
+
+## Broader objective: 4.1 golden retrieval dataset and baseline
 
 Create a versioned retrieval-focused golden dataset with at least 40 examples
 and a reproducible, provider-free vector-only evaluation baseline.
@@ -65,15 +125,20 @@ author the first 10 human-reference labels on the user's behalf.
 
 ## Planned later objectives
 
-1. **4.2 Keyword retrieval:** add Postgres full-text search and measure it
+1. **4.1b Dataset completion and vector baseline:** after the human checkpoint,
+   preserve the first ten labels, agree on how the remaining 30 will be labeled,
+   add retrieval-only metrics/reports and deterministic CI, then capture the
+   exact vector baseline only with separate approval for paid calls or database
+   writes.
+2. **4.2 Keyword retrieval:** add Postgres full-text search and measure it
    independently against the same dataset.
-2. **4.3 Hybrid retrieval:** implement reciprocal rank fusion, then accept or
+3. **4.3 Hybrid retrieval:** implement reciprocal rank fusion, then accept or
    reject it using a chosen metric and failure-case review.
-3. **4.4 Metadata and reranking experiments:** change one variable at a time;
+4. **4.4 Metadata and reranking experiments:** change one variable at a time;
    keep only evidence-backed improvements.
-4. **4.5 Index experiment:** add HNSW in a migration with the matching cosine
+5. **4.5 Index experiment:** add HNSW in a migration with the matching cosine
    operator class, inspect query plans, and document small-corpus limitations.
-5. **4.6 Quality gate and release:** produce JSON/Markdown reports, fail CI on a
+6. **4.6 Quality gate and release:** produce JSON/Markdown reports, fail CI on a
    deliberate regression, expose app and dataset versions, deploy only after
    explicit approval, and record Week 4 evidence.
 
@@ -113,25 +178,29 @@ because they are popular.
 - Relevant tests and CI pass.
 - The handoff identifies the exact starting point for objective 4.2.
 
-## Suggested opening prompt for the next Codex task
+## Suggested opening prompt after the human checkpoint
 
 The reusable opening and closing templates live in
-[`CODEX_SESSION_PROMPTS.md`](CODEX_SESSION_PROMPTS.md). For objective 4.1, use
+[`CODEX_SESSION_PROMPTS.md`](CODEX_SESSION_PROMPTS.md). For objective 4.1b, use
 this ready-to-copy version:
 
 ```text
-We are starting objective 4.1 of the ai-learning project.
+We are starting objective 4.1b of the ai-learning project after I authored the
+first ten Week 4 golden retrieval labels.
 
 Read AGENTS.md, docs/CURRENT_MILESTONE.md, the Week 4 section of
 PRODUCTION_AI_SELF_LEARNING_GUIDE.md, LEARNING_PROGRESS_TRACKER.md, relevant
 ADRs, and recent Git history.
 
 Before making changes:
-1. Inspect the current dataset, retrieval implementation, and evaluation code.
-2. Explain the Week 3 baseline that objective 4.1 depends on.
-3. Identify discrepancies between the milestone and current code.
-4. Propose a PR-sized implementation sequence.
-5. Separate provider-free work from paid, remote, destructive, or cloud actions.
+1. Run rag-golden-dataset --require-complete and record the canonical hash.
+2. Verify that the first ten slots retain human-authored provenance, but do not
+   create, rewrite, or silently repair any of those labels.
+3. Inspect retrieval and evaluation code and explain the Week 3 baseline.
+4. Propose a PR-sized sequence for reaching 40 cases, retrieval-only metrics,
+   deterministic CI, JSON/Markdown reports, and the exact vector baseline.
+5. Ask before model-assisted labeling, paid calls, database writes, remote
+   actions, destructive actions, or cloud changes.
 
 Never read any secret value. If secret setup becomes necessary, give me exact
 commands that use hidden input so I enter the value without exposing it to you,
