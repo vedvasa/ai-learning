@@ -44,7 +44,7 @@ the reasoning behind the current design.
 
 The provider-free foundation is implemented on
 `codex/objective-4-1a-golden-foundation` at implementation commit `3bec477`
-(PR not yet opened):
+([PR #31](https://github.com/vedvasa/ai-learning/pull/31)):
 
 - a separate strict Week 4 retrieval schema defines fictional tenant/user
   context, version-and-content-hash-pinned document references, key answer
