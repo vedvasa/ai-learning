@@ -28,6 +28,9 @@ SYNTHETIC_CORPUS_PATH = FIXTURE_ROOT / "corpus"
 PRIVATE_CONTENT_HASH = (
     "5791eddc415c98a41db1cccf4ea3f70ade5a4ac250c34ee83a979dfb072912cb"
 )
+GOLDEN_DATASET_SHA256 = (
+    "092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418"
+)
 
 
 def _synthetic_worksheet() -> dict:
@@ -65,24 +68,47 @@ def _golden_worksheet_from_synthetic() -> dict:
     return payload
 
 
-def test_committed_week4_worksheet_has_ten_blank_human_slots() -> None:
-    first = load_worksheet(WORKSHEET_PATH, corpus_directory=CORPUS_PATH)
-    second = load_worksheet(WORKSHEET_PATH, corpus_directory=CORPUS_PATH)
+def _blank_committed_worksheet() -> dict:
+    payload = json.loads(WORKSHEET_PATH.read_text(encoding="utf-8"))
+    for slot in payload["slots"]:
+        slot["label"] = None
+    return payload
+
+
+def test_committed_week4_worksheet_has_ten_human_labels() -> None:
+    first = load_worksheet(
+        WORKSHEET_PATH,
+        corpus_directory=CORPUS_PATH,
+        require_complete=True,
+    )
+    second = load_worksheet(
+        WORKSHEET_PATH,
+        corpus_directory=CORPUS_PATH,
+        require_complete=True,
+    )
 
     assert first.worksheet.purpose is GoldenDatasetPurpose.GOLDEN
     assert len(first.worksheet.slots) == 10
-    assert first.completed_labels == 0
-    assert first.blank_labels == 10
-    assert first.dataset is None
-    assert first.dataset_sha256 is None
+    assert first.completed_labels == 10
+    assert first.blank_labels == 0
+    assert first.dataset is not None
+    assert first.dataset_sha256 == GOLDEN_DATASET_SHA256
     assert first.worksheet_sha256 == second.worksheet_sha256
-    assert all(slot.label is None for slot in first.worksheet.slots)
+    assert {case.category for case in first.dataset.cases} == set(
+        RetrievalCategory
+    )
+    assert all(
+        case.label_provenance.origin is LabelOrigin.HUMAN
+        for case in first.dataset.cases
+    )
 
 
-def test_blank_worksheet_fails_completed_dataset_gate() -> None:
+def test_blank_worksheet_fails_completed_dataset_gate(tmp_path: Path) -> None:
+    worksheet_path = _write_worksheet(tmp_path, _blank_committed_worksheet())
+
     with pytest.raises(GoldenDatasetError, match="10 blank label slots"):
         load_worksheet(
-            WORKSHEET_PATH,
+            worksheet_path,
             corpus_directory=CORPUS_PATH,
             require_complete=True,
         )
@@ -254,7 +280,7 @@ def test_duplicate_questions_are_rejected(tmp_path: Path) -> None:
         )
 
 
-def test_cli_validates_blank_template_without_external_clients(capsys) -> None:
+def test_cli_validates_completed_dataset_without_external_clients(capsys) -> None:
     args = golden_retrieval.build_parser().parse_args(
         [
             "--worksheet",
@@ -266,8 +292,8 @@ def test_cli_validates_blank_template_without_external_clients(capsys) -> None:
 
     assert golden_retrieval.run_cli(args) == 0
     output = capsys.readouterr().out
-    assert "0/10 labels completed; 10 blank" in output
-    assert "Worksheet SHA-256" in output
+    assert "Validated completed Week 4 dataset with 10 labels" in output
+    assert GOLDEN_DATASET_SHA256 in output
 
 
 def test_cli_prints_reference_manifest_without_document_content(capsys) -> None:
@@ -294,11 +320,15 @@ def test_cli_prints_reference_manifest_without_document_content(capsys) -> None:
     assert "content" not in manifest[0]
 
 
-def test_cli_requires_all_human_labels_when_requested(capsys) -> None:
+def test_cli_requires_all_human_labels_when_requested(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    worksheet_path = _write_worksheet(tmp_path, _blank_committed_worksheet())
     args = golden_retrieval.build_parser().parse_args(
         [
             "--worksheet",
-            str(WORKSHEET_PATH),
+            str(worksheet_path),
             "--corpus",
             str(CORPUS_PATH),
             "--require-complete",

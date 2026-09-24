@@ -380,20 +380,22 @@ provenance. Validation rejects duplicate cases, incomplete category coverage,
 missing or stale corpus references, cross-tenant references, and documents
 outside the user's visibility scope.
 
-The committed Week 4 worksheet contains ten explicitly blank human-label slots.
-Codex and models must not fill them. Validate the blank scaffold for free with:
+The committed Week 4 worksheet contains the first ten project-owner-authored,
+human-reviewed labels across all six required categories. Those labels are the
+human calibration checkpoint and must not be rewritten by later model-assisted
+labeling. Validate the completed dataset for free with:
 
 ```bash
 uv sync --locked --no-editable --reinstall-package ai-learning
-uv run --no-sync rag-golden-dataset
+uv run --no-sync rag-golden-dataset --require-complete
 ```
 
-After the project owner has authored all ten labels, the stronger
-`rag-golden-dataset --require-complete` gate verifies the completed schema,
-category coverage, corpus pins, and canonical dataset SHA-256 without loading
-settings, connecting to Postgres, or constructing a provider client. Follow the
-[local database and evaluation runbook](docs/DATABASE_DEVELOPMENT.md) for the
-exact human-labeling workflow. See
+The completion gate verifies the schema, category coverage, corpus pins, and
+canonical dataset SHA-256 without loading settings, connecting to Postgres, or
+constructing a provider client. The recorded human-checkpoint dataset hash is
+`092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
+Follow the [local database and evaluation runbook](docs/DATABASE_DEVELOPMENT.md)
+for the review workflow. See
 [ADR 0015](docs/decisions/0015-human-first-versioned-golden-retrieval-contract.md)
 for the provenance, staleness, privacy, and hashing decisions.
 

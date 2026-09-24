@@ -201,21 +201,21 @@ Anthropic calls. Live ingestion and `/api/retrieve` make paid OpenAI embeddings
 calls. `/api/answer` also makes a paid generation call unless retrieval returns
 no evidence; the corresponding instructions identify each boundary.
 
-## Author the first ten Week 4 retrieval labels
+## Review the first ten Week 4 retrieval labels
 
-Objective 4.1a deliberately commits an incomplete worksheet at
-`datasets/rag-evaluation/week4_human_labels.json`. Its ten `"label"` values are
-all `null`. The project owner must author those ten reference labels without
-model assistance before the dataset is expanded or any model-assisted labeling
-begins.
+Objective 4.1a first committed an incomplete worksheet at
+`datasets/rag-evaluation/week4_human_labels.json`. The project owner has now
+authored all ten reference labels, and the completed human checkpoint is
+versioned in that file. Later model-assisted work must preserve these labels
+and their `human` provenance unchanged.
 
-Install the current branch and confirm that the blank scaffold and corpus are
-valid without loading settings, opening Postgres, or constructing a provider
-client:
+Install the current branch and confirm that the completed dataset and corpus
+are valid without loading settings, opening Postgres, or constructing a
+provider client:
 
 ```bash
 uv sync --locked --no-editable --reinstall-package ai-learning
-uv run --no-sync rag-golden-dataset
+uv run --no-sync rag-golden-dataset --require-complete
 ```
 
 Print copyable stable document-reference objects plus their visibility. This
@@ -226,9 +226,9 @@ document content:
 uv run --no-sync rag-golden-dataset --print-corpus-manifest
 ```
 
-Read the fictional Markdown files in `datasets/knowledge-base/` yourself. For
-each slot, replace `"label": null` with this shape, supplying your own question,
-relevance judgment, answer facts, category, difficulty, and notes:
+The label contract remains the following shape for review and for future human
+labels. Human reviewers must supply their own questions, relevance judgments,
+answer facts, categories, difficulty, and notes:
 
 ```json
 {
@@ -276,16 +276,17 @@ Cases that should abstain must leave both `expected_relevant_documents` and
 a privacy-boundary request for internal data should expect abstention rather
 than naming the internal document as retrievable evidence.
 
-Run the strict completion gate after all ten slots are authored:
+Run the strict completion gate after reviewing the committed labels:
 
 ```bash
 uv run --no-sync rag-golden-dataset --require-complete
 ```
 
-The command must report ten validated labels and a canonical dataset SHA-256.
-At that point, stop and record the hash for review. Do not ask a model to create,
-rewrite, or complete these first ten labels, and do not expand toward 40 cases
-until the human reference batch has been reviewed as its own increment.
+The command must report ten validated labels and canonical dataset SHA-256
+`092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
+Do not ask a model to rewrite or silently repair these first ten labels. Before
+expanding toward 40 cases, preserve this checkpoint and agree on provenance and
+review rules for every additional label.
 
 ## Hosted-project boundary
 
