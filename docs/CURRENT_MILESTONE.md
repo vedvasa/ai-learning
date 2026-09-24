@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-23
 
-Status: Objective 4.1a human checkpoint complete in implementation commit
-`486177c`; [PR #32](https://github.com/vedvasa/ai-learning/pull/32) is awaiting
-CI and merge before objective 4.1b.
+Status: Objective 4.1a human checkpoint merged in
+[PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
+`84ec22b`; objective 4.1b is next.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -41,7 +41,7 @@ The detailed requirements remain in the
 See `docs/evidence/week-3/README.md` and ADRs 0008 through 0014 for evidence and
 the reasoning behind the current design.
 
-## Current objective: 4.1a golden dataset foundation and human checkpoint
+## Completed objective: 4.1a golden dataset foundation and human checkpoint
 
 The provider-free foundation was merged in
 [PR #31](https://github.com/vedvasa/ai-learning/pull/31):
@@ -83,10 +83,9 @@ uv run --no-sync rag-golden-dataset --require-complete
 The canonical completed dataset SHA-256 is
 `092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
 Later work must preserve these ten labels unchanged. Do not begin
-model-assisted labeling, create the remaining 30 cases, capture a paid vector
-baseline, or implement retrieval experiments until
-[PR #32](https://github.com/vedvasa/ai-learning/pull/32) merges and objective
-4.1b begins with an agreed labeling and review plan.
+model-assisted labeling or create the remaining 30 cases until objective 4.1b
+agrees on labeling provenance and review. Paid vector baselines and remote
+database writes still require separate explicit approval.
 
 ### Provider-free verification on 2026-09-23
 
@@ -130,7 +129,7 @@ This objective should include:
 Codex may scaffold the schema and provide a labeling worksheet, but must not
 author the first 10 human-reference labels on the user's behalf.
 
-## Planned later objectives
+## Next and later objectives
 
 1. **4.1b Dataset completion and vector baseline:** after the human checkpoint,
    preserve the first ten labels, agree on how the remaining 30 will be labeled,
