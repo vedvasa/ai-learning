@@ -1,9 +1,10 @@
 # Current milestone: Week 4 RAG Quality Lab
 
-Last updated: 2026-09-01
+Last updated: 2026-09-23
 
-Status: Objective 4.1a foundation implemented; waiting for the project owner to
-author the first ten golden labels.
+Status: Objective 4.1a human checkpoint complete in implementation commit
+`486177c`; [PR #32](https://github.com/vedvasa/ai-learning/pull/32) is awaiting
+CI and merge before objective 4.1b.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -42,9 +43,8 @@ the reasoning behind the current design.
 
 ## Current objective: 4.1a golden dataset foundation and human checkpoint
 
-The provider-free foundation is implemented on
-`codex/objective-4-1a-golden-foundation` at implementation commit `3bec477`
-([PR #31](https://github.com/vedvasa/ai-learning/pull/31)):
+The provider-free foundation was merged in
+[PR #31](https://github.com/vedvasa/ai-learning/pull/31):
 
 - a separate strict Week 4 retrieval schema defines fictional tenant/user
   context, version-and-content-hash-pinned document references, key answer
@@ -55,50 +55,56 @@ The provider-free foundation is implemented on
   outside the user's visibility scope;
 - the canonical dataset hash is computed only from strict validated data;
 - `datasets/rag-evaluation/week4_human_labels.json` contains exactly ten
-  sequential slots whose labels are all intentionally `null`;
-- `rag-golden-dataset` validates the scaffold and prints a content-free corpus
-  reference manifest, while `--require-complete` fails until all ten labels form
-  a valid human-authored dataset; and
+  sequential, project-owner-authored human labels;
+- `rag-golden-dataset` validates the dataset and prints a content-free corpus
+  reference manifest, while `--require-complete` verifies that all ten labels
+  form a valid human-authored dataset; and
 - isolated fixtures are marked `contract_test` / `synthetic_test`, cannot be
   accepted as golden data, and exercise the completed form deterministically.
 
 ADR 0015 records the provenance, privacy, staleness, and hashing decisions. The
-exact human-only labeling workflow is in `docs/DATABASE_DEVELOPMENT.md`.
+exact review workflow is in `docs/DATABASE_DEVELOPMENT.md`.
 
-### Required human checkpoint
+### Completed human checkpoint
 
-The project owner must now author all ten blank labels directly from the
-fictional corpus, without model assistance. Start with:
+The project owner authored and reviewed the first ten labels from the fictional
+corpus. The checkpoint contains two direct-fact, two multi-document, one
+ambiguous, two unanswerable, two adversarial, and one privacy-boundary case, so
+all six required categories are represented. Every label uses non-personal
+`human` / `project_owner` provenance.
+
+Validate the preserved checkpoint with:
 
 ```bash
 uv sync --locked --no-editable --reinstall-package ai-learning
-uv run --no-sync rag-golden-dataset
-uv run --no-sync rag-golden-dataset --print-corpus-manifest
-```
-
-After editing the worksheet, run:
-
-```bash
 uv run --no-sync rag-golden-dataset --require-complete
 ```
 
-Stop after that command reports ten valid labels and a canonical dataset hash.
-Do not begin model-assisted labeling, create the remaining 30 cases, capture a
-paid vector baseline, or implement retrieval experiments in this increment.
+The canonical completed dataset SHA-256 is
+`092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
+Later work must preserve these ten labels unchanged. Do not begin
+model-assisted labeling, create the remaining 30 cases, capture a paid vector
+baseline, or implement retrieval experiments until
+[PR #32](https://github.com/vedvasa/ai-learning/pull/32) merges and objective
+4.1b begins with an agreed labeling and review plan.
 
-### Provider-free verification on 2026-09-01
+### Provider-free verification on 2026-09-23
 
-- `uv sync --locked --no-editable --reinstall-package ai-learning` succeeded.
+- `uv sync --locked --no-editable` succeeded.
 - `uv run --no-sync pytest` passed: 224 passed and 6 local database tests
   skipped because no disposable Supabase stack was running.
 - The triage dataset retained canonical SHA-256
   `334f962322f5845b23c18c19e4ae5e7b83682f723818512d40d8d7a104a52c63`.
 - The unchanged Week 3 RAG dataset retained its recorded canonical SHA-256
   `7cd6be7d6af670adf4b9accab489d9cb1bcb154561cce61339c2a4dfb3e3d775`.
-- The blank Week 4 worksheet validated as 0/10 complete with worksheet SHA-256
-  `b8c51ea99a6c0f2d87836d0f5c3b4b7c08484bdee456eda9f579a7842dd0eb04`.
-- Shell syntax checks passed. Container build/smoke was not run because the
-  local Docker daemon was unavailable.
+- The completed Week 4 dataset validated as 10/10 complete with canonical
+  dataset SHA-256
+  `092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
+- `docker build --tag ai-learning:local .` and
+  `sh scripts/smoke-container.sh ai-learning:local` passed, including all three
+  offline dataset validators inside the production image.
+- `git diff --check` passed. No application runtime, dependency, database, or
+  deployment behavior changed in this checkpoint.
 
 ## Broader objective: 4.1 golden retrieval dataset and baseline
 
