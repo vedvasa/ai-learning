@@ -2,8 +2,9 @@
 
 Last updated: 2026-09-23
 
-Status: Objective 4.1a human checkpoint complete; preparing the focused
-checkpoint PR before objective 4.1b.
+Status: Objective 4.1a human checkpoint complete in implementation commit
+`486177c`; [PR #32](https://github.com/vedvasa/ai-learning/pull/32) is awaiting
+CI and merge before objective 4.1b.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -83,8 +84,9 @@ The canonical completed dataset SHA-256 is
 `092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
 Later work must preserve these ten labels unchanged. Do not begin
 model-assisted labeling, create the remaining 30 cases, capture a paid vector
-baseline, or implement retrieval experiments until this checkpoint PR merges
-and objective 4.1b begins with an agreed labeling and review plan.
+baseline, or implement retrieval experiments until
+[PR #32](https://github.com/vedvasa/ai-learning/pull/32) merges and objective
+4.1b begins with an agreed labeling and review plan.
 
 ### Provider-free verification on 2026-09-23
 
