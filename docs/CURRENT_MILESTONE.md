@@ -1,10 +1,12 @@
 # Current milestone: Week 4 RAG Quality Lab
 
-Last updated: 2026-09-23
+Last updated: 2026-09-27
 
 Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
-`84ec22b`; objective 4.1b is next.
+`84ec22b`. The first objective 4.1b increment adds the provider-free retrieval
+scorer on `codex/week4-retrieval-evaluator`, starting from `492d7e9`.
+Dataset expansion and the measured vector baseline remain incomplete.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -105,6 +107,64 @@ database writes still require separate explicit approval.
 - `git diff --check` passed. No application runtime, dependency, database, or
   deployment behavior changed in this checkpoint.
 
+## Current objective: 4.1b retrieval evaluator foundation
+
+The first increment provides:
+
+- `rag-retrieval-evaluation --validate-only` to check the unchanged human
+  checkpoint and corpus without settings, provider clients, or database access;
+- `--minimum-cases 40` as a separate completion gate (currently fails as
+  expected because the preserved dataset contains ten cases);
+- strict saved-ranking inputs pinned to the dataset and corpus hashes, with
+  explicit synthetic versus recorded evidence and retrieval configuration;
+- document hit@k, macro document recall@k, MRR@k over the original ranked
+  chunks, category breakdowns, failures, leakage, source timings, and tokens;
+- deterministic aggregate JSON/Markdown reports under ignored `artifacts/`;
+- compatible-run comparisons and a test proving that removing relevant
+  evidence fails the scorer's regression gate; and
+- CI and production-container validation for the new offline command.
+
+ADR 0016 defines scoring, scope enforcement, replay provenance, and limitations.
+The synthetic ranking fixture tests the evaluator; it is not a measured vector
+baseline. Replay does not execute SQL, embeddings, or the chunker and cannot
+substitute for the later real search-regression gate. No human labels, corpus,
+runtime retrieval, database schema, or deployment behavior changed.
+
+### Provider-free verification on 2026-09-27
+
+- Locked non-editable installation passed; no dependency or lockfile changes.
+- Full local suite: 258 passed, 6 local database tests skipped because the
+  disposable Supabase stack was not running.
+- All three existing offline dataset validators passed with their recorded
+  hashes unchanged, including the ten-label human checkpoint.
+- The new validator and synthetic replay/comparison commands passed; reports
+  were generated only in ignored `artifacts/`.
+- The local production image built and its smoke test passed, including the
+  new evaluator's provider-free validation command.
+- `git diff --check` passed. No paid calls or hosted mutations were performed.
+
+### Next implementation and review decisions
+
+1. Agree on the remaining thirty labels' authorship and review workflow. A
+   proposed workflow is three model-assisted batches of ten, with project-owner
+   review before any draft is accepted as golden data. Drafting is not yet
+   authorized or performed in this increment. Preserve the original file;
+   an expanded worksheet must contain the exact first ten labels.
+2. Choose the final category/difficulty balance. A possible 40-case mix is
+   12 direct-fact, 8 multi-document, and 5 each of ambiguous, unanswerable,
+   adversarial, and privacy-boundary cases; this is a proposal, not a new
+   schema requirement. Include harder cases beyond the current easy/medium set.
+3. Add an explicit capture and re-execution path for real vector evidence,
+   including query and corpus vectors, actual chunk identities, configuration,
+   and source timings. Use the disposable local database for search tests and
+   make telemetry writes explicit. Paid calls and hosted writes require
+   separate approval.
+4. Complete at least 40 reviewed cases, capture the exact vector baseline,
+   choose thresholds using the evidence, and document limitations before 4.2.
+
+The current command can replay saved rankings only. The remaining work must not
+be reported as complete just because its synthetic scoring fixture passes.
+
 ## Broader objective: 4.1 golden retrieval dataset and baseline
 
 Create a versioned retrieval-focused golden dataset with at least 40 examples
@@ -184,15 +244,16 @@ because they are popular.
 - Relevant tests and CI pass.
 - The handoff identifies the exact starting point for objective 4.2.
 
-## Suggested opening prompt after the human checkpoint
+## Suggested opening prompt for continuing objective 4.1b
 
 The reusable opening and closing templates live in
 [`CODEX_SESSION_PROMPTS.md`](CODEX_SESSION_PROMPTS.md). For objective 4.1b, use
 this ready-to-copy version:
 
 ```text
-We are starting objective 4.1b of the ai-learning project after I authored the
-first ten Week 4 golden retrieval labels.
+Continue objective 4.1b of the ai-learning project after the provider-free
+retrieval scorer foundation. The ten human labels are frozen; the 40-case
+dataset and measured vector baseline are still pending.
 
 Read AGENTS.md, docs/CURRENT_MILESTONE.md, the Week 4 section of
 PRODUCTION_AI_SELF_LEARNING_GUIDE.md, LEARNING_PROGRESS_TRACKER.md, relevant
@@ -202,9 +263,10 @@ Before making changes:
 1. Run rag-golden-dataset --require-complete and record the canonical hash.
 2. Verify that the first ten slots retain human-authored provenance, but do not
    create, rewrite, or silently repair any of those labels.
-3. Inspect retrieval and evaluation code and explain the Week 3 baseline.
-4. Propose a PR-sized sequence for reaching 40 cases, retrieval-only metrics,
-   deterministic CI, JSON/Markdown reports, and the exact vector baseline.
+3. Inspect the scorer, ADR 0016, and retrieval code; distinguish replayed
+   synthetic metrics from actual measured vector quality.
+4. Agree on labeling/review and propose the next small increment for dataset
+   completion, vector capture, local re-execution, and the measured baseline.
 5. Ask before model-assisted labeling, paid calls, database writes, remote
    actions, destructive actions, or cloud changes.
 

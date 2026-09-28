@@ -30,6 +30,13 @@ jobs:
       - name: Run tests
         run: uv run --no-sync pytest -v
 
+      - name: Verify offline retrieval scoring
+        run: |
+          uv run --no-sync rag-retrieval-evaluation --validate-only
+          uv run --no-sync rag-retrieval-evaluation \
+            --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
+            --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json
+
       - name: Check production startup script
         run: |
           sh -n scripts/start-production.sh

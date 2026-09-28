@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "evidence_kind": "synthetic_test",
+  "source_revision": null,
+  "dataset_sha256": "092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418",
+  "corpus_sha256": "d39a62658b0c8d9d0273bad89d7ccc578fd9dddf06defdb531a8c6aa56a83da2",
+  "configuration": {
+    "method": "exact_cosine",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_dimensions": 1536,
+    "chunker": "markdown_heading_paragraph",
+    "chunk_max_tokens": 500,
+    "chunk_overlap_tokens": 0,
+    "top_k": 5,
+    "minimum_similarity": 0.0,
+    "context_policy": "case_tenant_and_visibilities"
+  },
+  "cases": [
+    {
+      "case_id": "human-password-reset",
+      "ranked_chunks": [
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "account-profile",
+            "document_version": 1,
+            "content_sha256": "1bd77d69d8824a45e7eb75b897ecf14a5ad8f1437ba73319bea593b33a4fec1f"
+          },
+          "chunk_index": 0
+        },
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "account-password-reset",
+            "document_version": 1,
+            "content_sha256": "68cf46608dee54db4e258115fd2d70ff55f5e5f3140b9fd2b08036c324a5e8af"
+          },
+          "chunk_index": 0
+        }
+      ],
+      "search_latency_ms": 1.0,
+      "embedding_latency_ms": 2.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-api-rate-limiting-policy",
+      "ranked_chunks": [],
+      "search_latency_ms": 2.0,
+      "embedding_latency_ms": 4.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-change-billing-plan",
+      "ranked_chunks": [
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "billing-plan-changes",
+            "document_version": 1,
+            "content_sha256": "805dfba7dca9255026af74cae94d2a7a7bfe4175dd31826c0a3266b641ae3425"
+          },
+          "chunk_index": 0
+        },
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "billing-plan-changes",
+            "document_version": 1,
+            "content_sha256": "805dfba7dca9255026af74cae94d2a7a7bfe4175dd31826c0a3266b641ae3425"
+          },
+          "chunk_index": 1
+        },
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "account-profile",
+            "document_version": 1,
+            "content_sha256": "1bd77d69d8824a45e7eb75b897ecf14a5ad8f1437ba73319bea593b33a4fec1f"
+          },
+          "chunk_index": 0
+        }
+      ],
+      "search_latency_ms": 3.0,
+      "embedding_latency_ms": 6.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-compare-plan-limits",
+      "ranked_chunks": [
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "account-profile",
+            "document_version": 1,
+            "content_sha256": "1bd77d69d8824a45e7eb75b897ecf14a5ad8f1437ba73319bea593b33a4fec1f"
+          },
+          "chunk_index": 0
+        },
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "plan-limits-starter",
+            "document_version": 1,
+            "content_sha256": "f46087582c54e4b4d6b0ae5cee95d8c2639aff7a215ddd91dab1d66a45527ef8"
+          },
+          "chunk_index": 0
+        },
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "plan-limits-pro",
+            "document_version": 1,
+            "content_sha256": "96f9a702be603cddab24d736444f44606308a3ddd40090f674d6ae091d468516"
+          },
+          "chunk_index": 0
+        }
+      ],
+      "search_latency_ms": 4.0,
+      "embedding_latency_ms": 8.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-refund-workspace-ambiguity",
+      "ranked_chunks": [
+        {
+          "document": {
+            "tenant_id": "knowledgedesk-demo",
+            "document_key": "billing-invoices",
+            "document_version": 1,
+            "content_sha256": "81eee419918c1227c1112f3ebfa9f950c3e9cbb36726e6c3b144e4af47f85978"
+          },
+          "chunk_index": 0
+        }
+      ],
+      "search_latency_ms": 5.0,
+      "embedding_latency_ms": 10.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-china-shipping-unanswerable",
+      "ranked_chunks": [],
+      "search_latency_ms": 6.0,
+      "embedding_latency_ms": 12.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-subscriber-list-request",
+      "ranked_chunks": [],
+      "search_latency_ms": 7.0,
+      "embedding_latency_ms": 14.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-self-destructive-instruction",
+      "ranked_chunks": [],
+      "search_latency_ms": 8.0,
+      "embedding_latency_ms": 16.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-customer-financials-boundary",
+      "ranked_chunks": [],
+      "search_latency_ms": 9.0,
+      "embedding_latency_ms": 18.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    },
+    {
+      "case_id": "human-billing-plan-support-date",
+      "ranked_chunks": [],
+      "search_latency_ms": 10.0,
+      "embedding_latency_ms": 20.0,
+      "embedding_input_tokens": 10,
+      "error_kind": null
+    }
+  ]
+}

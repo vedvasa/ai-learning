@@ -288,6 +288,75 @@ Do not ask a model to rewrite or silently repair these first ten labels. Before
 expanding toward 40 cases, preserve this checkpoint and agree on provenance and
 review rules for every additional label.
 
+## Score Week 4 retrieval results offline
+
+Install the current branch and check the human checkpoint:
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync rag-retrieval-evaluation --validate-only
+```
+
+This command validates the completed worksheet, corpus pins, and exact first
+ten labels without reading settings or connecting to a provider/database. Add
+`--minimum-cases 40` to enforce the eventual objective 4.1 completion count;
+that check intentionally fails while only the human checkpoint is available.
+Use `--worksheet PATH` for a future expanded worksheet whose first ten labels
+exactly match the unchanged checkpoint.
+
+Exercise the scorer on the checked-in synthetic rankings:
+
+```bash
+uv run --no-sync rag-retrieval-evaluation \
+  --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
+  --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json
+```
+
+The output is `artifacts/retrieval-evaluation/report.json` plus `report.md`.
+`--output-directory PATH` changes their directory. Reports cannot overwrite the
+input files or corpus. Repeated runs with identical inputs produce identical
+reports. The command makes zero provider calls and no database writes, and
+there is no live/paid execution mode in this increment.
+
+The synthetic fixture intentionally scores 0.75 hit@5, 0.625 document recall@5,
+and 0.5 MRR@5 on four answerable cases. **These are fabricated scorer-test
+results, not measured vector quality.** Its timing values are fabricated too.
+The other six cases have no relevant-document labels; their relevance metrics
+are null, and returned-result counts do not claim answer abstention.
+
+A saved-run file follows the strict `RecordedRetrievalRun` contract in
+`src/app/schemas/retrieval_evaluation.py`. It contains:
+
+- `evidence_kind`: `synthetic_test` or `recorded_exact_vector`;
+- `source_revision`: the full source Git revision, required for recorded runs;
+- canonical dataset and corpus hashes, printed by `--validate-only`;
+- exact-cosine configuration, embedding model/dimensions, chunker/token limit,
+  top k, similarity floor, and per-case tenant/visibility policy; and
+- one outcome per case, ordered chunk references containing pinned document
+  references and chunk indices, optional source search/embedding timings and
+  input tokens, or a closed failure kind.
+
+List the original top-k chunks in rank order. Do not deduplicate, backfill,
+truncate failures away, or drop unauthorized results before evaluation. The
+scorer checks document pins and resolves visibility from the corpus. It cannot
+verify actual chunk existence or vector ordering from saved references alone.
+The future capture adapter must establish those properties. Unknown timing or
+token values must be null, never invented zeroes.
+
+To compare two compatible saved runs, supply `--results CURRENT.json` and
+`--baseline-results BASELINE.json`. The default allowed drop in each overall
+relevance metric is zero. `--maximum-metric-drop 0.05` would allow five
+percentage points in hit rate/recall and 0.05 in MRR; it is an operator choice,
+not an adopted release threshold. Mismatched dataset, corpus, configuration,
+or evidence kind makes the comparison invalid. Timings are descriptive rather
+than gated because replay does not measure current search performance.
+
+Exit codes are 0 for a passing evaluation, 1 for failures/leakage or a
+metric regression (reports are still written), and 2 for invalid inputs or an
+output error. Routine CI exercises this command and a deliberately degraded
+synthetic ranking. It does not yet test the real chunker/search quality gate.
+See ADR 0016 for metric definitions and evidence limits.
+
 ## Hosted-project boundary
 
 Do not run `supabase link`, `supabase db push`, paste a database connection
