@@ -399,6 +399,28 @@ for the review workflow. See
 [ADR 0015](docs/decisions/0015-human-first-versioned-golden-retrieval-contract.md)
 for the provenance, staleness, privacy, and hashing decisions.
 
+Objective 4.1b begins with a provider-free retrieval scorer. Validate the labels
+and preserved human checkpoint, or exercise the reports with explicitly
+synthetic ranked results:
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync rag-retrieval-evaluation --validate-only
+uv run --no-sync rag-retrieval-evaluation \
+  --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
+  --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json
+```
+
+The replay command writes aggregate `report.json` and `report.md` under ignored
+`artifacts/retrieval-evaluation/`. It measures hit@k, document recall@k, MRR@k,
+source latency, failures, and leakage, with category breakdowns. Cases without
+relevance labels are reported separately; no answers are generated. Synthetic
+rankings test the scorer only. Replaying rankings does not rerun vector search
+or constitute the measured Week 4 baseline. The 40-case dataset, real vector
+capture, and search-regression checks remain pending. See
+[ADR 0016](docs/decisions/0016-provider-free-retrieval-scoring-and-replay.md) and
+the [evaluation runbook](docs/DATABASE_DEVELOPMENT.md#score-week-4-retrieval-results-offline).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:
