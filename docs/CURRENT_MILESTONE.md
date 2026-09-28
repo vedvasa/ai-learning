@@ -6,8 +6,9 @@ Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
 `84ec22b`. The provider-free retrieval scorer merged in
 [PR #34](https://github.com/vedvasa/ai-learning/pull/34) at `ee7e3d1`.
-The next thirty model-assisted cases are prepared for human review on
-`codex/week4-dataset-drafts`. Only the original ten labels are accepted golden
+The next thirty model-assisted cases are prepared for human review in
+[PR #35](https://github.com/vedvasa/ai-learning/pull/35), implementation commit
+`57077ca` on `codex/week4-dataset-drafts`. Only the original ten labels are accepted golden
 data; the expanded dataset and measured vector baseline remain incomplete.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
