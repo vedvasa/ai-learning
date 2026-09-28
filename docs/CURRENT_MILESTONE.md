@@ -5,7 +5,8 @@ Last updated: 2026-09-27
 Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
 `84ec22b`. The first objective 4.1b increment adds the provider-free retrieval
-scorer on `codex/week4-retrieval-evaluator`, starting from `492d7e9`.
+scorer in [PR #34](https://github.com/vedvasa/ai-learning/pull/34), implementation
+commit `42cd9b8` on `codex/week4-retrieval-evaluator`, starting from `492d7e9`.
 Dataset expansion and the measured vector baseline remain incomplete.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
