@@ -135,7 +135,7 @@ class GoldenLabelProvenance(StrictGoldenModel):
         return self
 
 
-class GoldenRetrievalCase(StrictGoldenModel):
+class RetrievalCaseContent(StrictGoldenModel):
     case_id: str = Field(
         min_length=1,
         max_length=80,
@@ -156,7 +156,6 @@ class GoldenRetrievalCase(StrictGoldenModel):
         min_length=1,
         max_length=1_000,
     )
-    label_provenance: GoldenLabelProvenance
 
     @field_validator("question")
     @classmethod
@@ -227,6 +226,10 @@ class GoldenRetrievalCase(StrictGoldenModel):
                 "adversarial and privacy-boundary cases require adversarial notes"
             )
         return self
+
+
+class GoldenRetrievalCase(RetrievalCaseContent):
+    label_provenance: GoldenLabelProvenance
 
 
 class GoldenRetrievalDataset(StrictGoldenModel):

@@ -4,10 +4,11 @@ Last updated: 2026-09-27
 
 Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
-`84ec22b`. The first objective 4.1b increment adds the provider-free retrieval
-scorer in [PR #34](https://github.com/vedvasa/ai-learning/pull/34), implementation
-commit `42cd9b8` on `codex/week4-retrieval-evaluator`, starting from `492d7e9`.
-Dataset expansion and the measured vector baseline remain incomplete.
+`84ec22b`. The provider-free retrieval scorer merged in
+[PR #34](https://github.com/vedvasa/ai-learning/pull/34) at `ee7e3d1`.
+The next thirty model-assisted cases are prepared for human review on
+`codex/week4-dataset-drafts`. Only the original ten labels are accepted golden
+data; the expanded dataset and measured vector baseline remain incomplete.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -108,7 +109,7 @@ database writes still require separate explicit approval.
 - `git diff --check` passed. No application runtime, dependency, database, or
   deployment behavior changed in this checkpoint.
 
-## Current objective: 4.1b retrieval evaluator foundation
+## Completed increment: 4.1b retrieval evaluator foundation
 
 The first increment provides:
 
@@ -144,17 +145,67 @@ runtime retrieval, database schema, or deployment behavior changed.
   new evaluator's provider-free validation command.
 - `git diff --check` passed. No paid calls or hosted mutations were performed.
 
-### Next implementation and review decisions
+## Current objective: 4.1b draft review and dataset completion
 
-1. Agree on the remaining thirty labels' authorship and review workflow. A
-   proposed workflow is three model-assisted batches of ten, with project-owner
-   review before any draft is accepted as golden data. Drafting is not yet
-   authorized or performed in this increment. Preserve the original file;
-   an expanded worksheet must contain the exact first ten labels.
-2. Choose the final category/difficulty balance. A possible 40-case mix is
-   12 direct-fact, 8 multi-document, and 5 each of ambiguous, unanswerable,
-   adversarial, and privacy-boundary cases; this is a proposal, not a new
-   schema requirement. Include harder cases beyond the current easy/medium set.
+The project owner approved model-assisted drafting in three batches of ten,
+followed by project-owner review before acceptance. The agreed final mix is
+12 direct-fact, 8 multi-document, and 5 each of ambiguous, unanswerable,
+adversarial, and privacy-boundary cases.
+
+Thirty drafts are now prepared under `datasets/rag-evaluation/week4_drafts/`:
+
+- [Batch 1, slots 11–20](../datasets/rag-evaluation/week4_drafts/batch-1.md)
+- [Batch 2, slots 21–30](../datasets/rag-evaluation/week4_drafts/batch-2.md)
+- [Batch 3, slots 31–40](../datasets/rag-evaluation/week4_drafts/batch-3.md)
+
+Each draft carries model-assisted provenance and `human_reviewed=false`. JSON
+is the draft source; generated Markdown contains the review rationale, source
+links, and canonical batch hash. ADR 0017 defines the separate draft contract
+and acceptance boundary. A merged draft PR or passing validator does not
+constitute human label review.
+
+If accepted unchanged, the combined set would contain 24 answerable cases and
+16 abstention cases, with 7 easy, 20 medium, and 13 hard questions. Expected
+document references cover all 21 corpus documents. New privacy cases include
+public-only denials, explicitly authorized internal access, and an empty-corpus
+tenant boundary. None changes the live API's authorization behavior.
+
+Validate this review package with:
+
+```bash
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+```
+
+This remains provider-free and database-free. Validation checks draft structure,
+source pins, category counts, uniqueness across all forty proposed cases, the
+unchanged human checkpoint, and review-sheet consistency. It never approves or
+promotes a draft. The accepted golden dataset still has ten cases, and its
+40-case gate intentionally remains unsatisfied.
+
+### Draft-package verification on 2026-09-27
+
+- Locked installation and full provider-free suite passed: 280 tests passed;
+  6 disposable local database tests were skipped because that stack was not
+  running.
+- All thirty drafts and all three generated review sheets passed validation.
+  Tests reject false review claims, stale references, unauthorized expected
+  evidence, duplicate questions/IDs, and accidental use of drafts as golden data.
+- Existing triage, Week 3 RAG, and ten-case human-checkpoint hashes are unchanged;
+  the existing retrieval evaluator still validates the original checkpoint.
+- The local production image built and all smoke checks passed, including the
+  draft validator inside the image. `git diff --check` passed.
+- No labels have been human-reviewed or promoted by this increment; no paid
+  model calls, hosted database operations, or deployments were performed.
+
+### Next implementation and review steps
+
+1. The project owner reviews the three actual draft versions, supplies
+   corrections by slot number, and explicitly approves each reviewed batch.
+   Regenerate sheets and obtain review of the changed version after corrections.
+2. Record actual review provenance and copy approved cases into a separate
+   expanded golden worksheet. Keep the original ten-label file unchanged and
+   preserve those exact first ten cases in the expanded worksheet. Validate the
+   completed forty-case artifact before treating it as the evaluation dataset.
 3. Add an explicit capture and re-execution path for real vector evidence,
    including query and corpus vectors, actual chunk identities, configuration,
    and source timings. Use the disposable local database for search tests and
@@ -211,8 +262,6 @@ author the first 10 human-reference labels on the user's behalf.
 
 ## Open decisions
 
-- Exact golden-dataset category balance beyond the required first 10 human
-  labels.
 - Whether deterministic CI should use committed query vectors, recorded ranked
   results, or an injected fake retriever at each evaluation layer.
 - Initial regression thresholds after the 40-case vector baseline is measured.
@@ -252,9 +301,10 @@ The reusable opening and closing templates live in
 this ready-to-copy version:
 
 ```text
-Continue objective 4.1b of the ai-learning project after the provider-free
-retrieval scorer foundation. The ten human labels are frozen; the 40-case
-dataset and measured vector baseline are still pending.
+Continue objective 4.1b after the thirty-case model-assisted draft package.
+The ten human labels are frozen. Drafting is authorized; review and acceptance
+of the actual batches, the 40-case golden dataset, and the measured vector
+baseline are still pending.
 
 Read AGENTS.md, docs/CURRENT_MILESTONE.md, the Week 4 section of
 PRODUCTION_AI_SELF_LEARNING_GUIDE.md, LEARNING_PROGRESS_TRACKER.md, relevant
@@ -266,10 +316,12 @@ Before making changes:
    create, rewrite, or silently repair any of those labels.
 3. Inspect the scorer, ADR 0016, and retrieval code; distinguish replayed
    synthetic metrics from actual measured vector quality.
-4. Agree on labeling/review and propose the next small increment for dataset
-   completion, vector capture, local re-execution, and the measured baseline.
-5. Ask before model-assisted labeling, paid calls, database writes, remote
-   actions, destructive actions, or cloud changes.
+4. Read ADR 0017 and the draft review sheets. Do not mark drafts human-reviewed
+   without actual project-owner review of their exact version. Preserve
+   model-assisted origin when approved cases enter the expanded worksheet.
+5. Propose the next small increment for accepted dataset completion, vector
+   capture, local re-execution, and the measured baseline. Paid calls, hosted
+   writes, destructive actions, and cloud changes need separate approval.
 
 Never read any secret value. If secret setup becomes necessary, give me exact
 commands that use hidden input so I enter the value without exposing it to you,

@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from ai_learning.golden_retrieval import (
     DEFAULT_CORPUS,
     DEFAULT_WORKSHEET,
+    HUMAN_CHECKPOINT_SHA256,
     GoldenDatasetError,
     load_worksheet,
 )
@@ -24,10 +25,6 @@ from app.services.retrieval_evaluation import (
     corpus_sha256,
     evaluate_retrieval,
     render_retrieval_markdown,
-)
-
-HUMAN_CHECKPOINT_SHA256 = (
-    "092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418"
 )
 
 

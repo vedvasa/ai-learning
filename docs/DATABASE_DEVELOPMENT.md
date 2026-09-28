@@ -288,6 +288,48 @@ Do not ask a model to rewrite or silently repair these first ten labels. Before
 expanding toward 40 cases, preserve this checkpoint and agree on provenance and
 review rules for every additional label.
 
+## Review the next thirty Week 4 drafts
+
+The project owner authorized three batches of ten model-assisted drafts for
+review, with a target total of 12 direct-fact, 8 multi-document, and 5 each of
+ambiguous, unanswerable, adversarial, and privacy-boundary cases. The draft
+package lives in `datasets/rag-evaluation/week4_drafts/`; begin with its README
+and `batch-1.md` (slots 11–20).
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+```
+
+This checks all thirty drafts, their category totals together with the preserved
+ten labels, question/ID uniqueness, trusted visibility/tenant scopes, and pinned
+document references. It also checks that the readable review sheets match the
+JSON source. Draft review references may include a fictional internal document
+for the reviewer's reasoning; expected retrievable documents still obey the
+case's access scope.
+
+Record corrections by slot number. Edit the JSON draft source, regenerate the
+review sheets, and review the updated version:
+
+```bash
+uv run --no-sync rag-retrieval-drafts --write-review-sheets
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+```
+
+The review sheets display a canonical batch hash to identify the precise
+version. The project owner must explicitly review the facts, sources, scope,
+and abstention judgments before approving that batch. Structural validation,
+passing CI, or merging the draft PR is not human review. These commands cannot
+approve or promote labels; `human_reviewed=true` is invalid in the draft schema.
+
+After actual review, prepare a separate expanded golden worksheet containing
+the original first ten cases unchanged and the approved cases with
+`model_assisted` origin, actual reviewer role/date, and `human_reviewed=true`.
+Then use the existing worksheet validator and, once all forty are accepted,
+`rag-retrieval-evaluation --worksheet PATH --validate-only --minimum-cases 40`.
+Do not rewrite the original checkpoint file or claim the 40-case objective is
+complete from unreviewed drafts. ADR 0017 records this boundary.
+
 ## Score Week 4 retrieval results offline
 
 Install the current branch and check the human checkpoint:

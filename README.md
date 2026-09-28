@@ -421,6 +421,19 @@ capture, and search-regression checks remain pending. See
 [ADR 0016](docs/decisions/0016-provider-free-retrieval-scoring-and-replay.md) and
 the [evaluation runbook](docs/DATABASE_DEVELOPMENT.md#score-week-4-retrieval-results-offline).
 
+The next 30 model-assisted cases are prepared in
+[three review batches](datasets/rag-evaluation/week4_drafts/README.md). They
+remain outside golden data until the project owner reviews them. Validate the
+drafts and their generated review sheets without providers or a database:
+
+```bash
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+```
+
+This checks the agreed category mix, source pins, and unchanged human checkpoint;
+it does not approve labels or satisfy the 40-case golden completion gate. See
+[ADR 0017](docs/decisions/0017-separate-unreviewed-retrieval-drafts.md).
+
 ## OpenAI connectivity check
 
 Create a local environment file and add your project API key to it:

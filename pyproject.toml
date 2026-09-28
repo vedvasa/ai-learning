@@ -28,6 +28,7 @@ ingest-documents = "ai_learning.ingest_documents:main"
 rag-evaluation = "ai_learning.rag_evaluation:main"
 rag-golden-dataset = "ai_learning.golden_retrieval:main"
 rag-retrieval-evaluation = "ai_learning.retrieval_evaluation:main"
+rag-retrieval-drafts = "ai_learning.retrieval_drafts:main"
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
