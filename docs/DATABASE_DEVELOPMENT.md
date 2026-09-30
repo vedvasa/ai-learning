@@ -288,6 +288,65 @@ Do not ask a model to rewrite or silently repair these first ten labels. Before
 expanding toward 40 cases, preserve this checkpoint and agree on provenance and
 review rules for every additional label.
 
+## Review selected Week 4 judgments
+
+The working set adds thirty model-assisted cases to the ten frozen human labels,
+with a target total of 12 direct-fact, 8 multi-document, and 5 each of ambiguous,
+unanswerable, adversarial, and privacy-boundary cases. Start with the
+[six-case review](../datasets/rag-evaluation/week4_drafts/quick-review.md).
+Codex checked all thirty against their sources. Full-batch review is optional;
+unreviewed cases may support separately reported experiments under ADR 0018.
+
+The project owner reviewed slots 15, 19, 26, 27, 30, and 40 on 2026-09-29.
+`datasets/rag-evaluation/week4_reviewed_labels.json` records those six after
+the original ten, retaining model-assisted origin. Its canonical dataset hash
+is `48aebb88f953b10db215146e77b50f2f5e4a44f69692bfd837dc5cb05341baff`.
+The original draft JSON stays unchanged as a provenance snapshot. For a future
+40-case run, use the reviewed copies and exclude duplicate draft case IDs:
+16 reviewed (7 answerable) plus 24 provisional (17 answerable).
+
+```bash
+uv sync --locked --no-editable
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+uv run --no-sync rag-retrieval-evaluation --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
+```
+
+This checks all thirty drafts, their category totals together with the preserved
+ten labels, question/ID uniqueness, trusted visibility/tenant scopes, and pinned
+document references. It also checks that the readable review sheets match the
+JSON source. Draft review references may include a fictional internal document
+for the reviewer's reasoning; expected retrievable documents still obey the
+case's access scope.
+
+Record corrections by slot number. Edit the JSON draft source, regenerate the
+review sheets, and review the updated version:
+
+```bash
+uv run --no-sync rag-retrieval-drafts --write-review-sheets
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+```
+
+The full review sheets display a canonical batch hash to identify the precise
+version. Also update the short review and source-check record if their content
+or pinned batches change; those two documents are not generated. Feedback
+applies only to the identified cases and content. Structural validation,
+assistant source checks, passing CI, or merging the PR are not human review.
+These commands cannot approve or promote labels; `human_reviewed=true` is
+invalid in the draft schema.
+
+Only after a complete label is reviewed may it enter a separate expanded
+golden worksheet with `model_assisted` origin, actual reviewer role/date, and
+`human_reviewed=true`; preserve the original ten exactly. Partial feedback
+does not approve unreviewed fields or other cases. Review can proceed while
+the experiment is prepared.
+
+The next evaluator increment must accept provisional cases explicitly, pin
+their inputs, and produce separate human-reference and provisional metrics
+with their own counts, relevance denominators, and categories. Human-reference
+relevance scores drive acceptance; provisional scores guide investigation.
+Execution failures and unauthorized results fail checks in either group.
+Do not bypass the current golden schema to simulate this support.
+
 ## Score Week 4 retrieval results offline
 
 Install the current branch and check the human checkpoint:
@@ -299,10 +358,12 @@ uv run --no-sync rag-retrieval-evaluation --validate-only
 
 This command validates the completed worksheet, corpus pins, and exact first
 ten labels without reading settings or connecting to a provider/database. Add
-`--minimum-cases 40` to enforce the eventual objective 4.1 completion count;
-that check intentionally fails while only the human checkpoint is available.
-Use `--worksheet PATH` for a future expanded worksheet whose first ten labels
-exactly match the unchanged checkpoint.
+`--minimum-cases 40` to require forty labels in the supplied golden worksheet;
+that check intentionally fails on the ten-label checkpoint. Under ADR 0018 it
+is no longer the completion gate for the mixed 40-case working set. Separate
+provisional inputs/reporting still need implementation.
+Use `--worksheet datasets/rag-evaluation/week4_reviewed_labels.json` for the
+16-case reviewed set, whose first ten labels exactly match the checkpoint.
 
 Exercise the scorer on the checked-in synthetic rankings:
 

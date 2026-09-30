@@ -416,10 +416,30 @@ The replay command writes aggregate `report.json` and `report.md` under ignored
 source latency, failures, and leakage, with category breakdowns. Cases without
 relevance labels are reported separately; no answers are generated. Synthetic
 rankings test the scorer only. Replaying rankings does not rerun vector search
-or constitute the measured Week 4 baseline. The 40-case dataset, real vector
-capture, and search-regression checks remain pending. See
+or constitute the measured Week 4 baseline. Evaluation of the 40-case working
+set, real vector capture, and search-regression checks remain pending. See
 [ADR 0016](docs/decisions/0016-provider-free-retrieval-scoring-and-replay.md) and
 the [evaluation runbook](docs/DATABASE_DEVELOPMENT.md#score-week-4-retrieval-results-offline).
+
+The next 30 model-assisted cases are prepared in
+[three original draft batches](datasets/rag-evaluation/week4_drafts/README.md).
+Codex checked their source support, and the project owner reviewed
+[six selected judgments](datasets/rag-evaluation/week4_drafts/quick-review.md).
+The [reviewed reference set](datasets/rag-evaluation/week4_reviewed_labels.json)
+now has 16 cases including the unchanged original ten. The other 24 remain
+provisional while experiments proceed. Validate the
+cases and their generated full sheets without providers or a database:
+
+```bash
+uv run --no-sync rag-retrieval-drafts --check-review-sheets
+uv run --no-sync rag-retrieval-evaluation --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
+```
+
+This checks the agreed category mix, source pins, and unchanged human checkpoint;
+it does not approve labels. The current scorer still accepts only golden
+worksheets. Explicit provisional inputs and separate reference/provisional
+reports are the next increment; no forty-label human-review gate blocks that
+work. See [ADR 0018](docs/decisions/0018-focused-human-review-and-provisional-evaluation.md).
 
 ## OpenAI connectivity check
 

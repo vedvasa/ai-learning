@@ -13,13 +13,16 @@ from pydantic import BaseModel, ValidationError
 from app.rag.documents import DocumentFormatError, SourceDocument, load_corpus
 from app.schemas.golden_retrieval import (
     GoldenDatasetPurpose,
-    GoldenRetrievalCase,
     GoldenRetrievalDataset,
     GoldenRetrievalWorksheet,
+    RetrievalCaseContent,
 )
 
 DEFAULT_WORKSHEET = Path("datasets/rag-evaluation/week4_human_labels.json")
 DEFAULT_CORPUS = Path("datasets/knowledge-base")
+HUMAN_CHECKPOINT_SHA256 = (
+    "092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418"
+)
 
 
 class GoldenDatasetError(ValueError):
@@ -81,7 +84,7 @@ def load_worksheet(
     completed_cases = tuple(
         slot.label for slot in worksheet.slots if slot.label is not None
     )
-    _validate_document_references(completed_cases, corpus=corpus)
+    validate_document_references(completed_cases, corpus=corpus)
 
     blank_labels = len(worksheet.slots) - len(completed_cases)
     if require_complete and blank_labels:
@@ -141,8 +144,8 @@ def corpus_reference_manifest(corpus_directory: Path) -> list[dict[str, object]]
     ]
 
 
-def _validate_document_references(
-    cases: Sequence[GoldenRetrievalCase],
+def validate_document_references(
+    cases: Sequence[RetrievalCaseContent],
     *,
     corpus: Sequence[SourceDocument],
 ) -> None:

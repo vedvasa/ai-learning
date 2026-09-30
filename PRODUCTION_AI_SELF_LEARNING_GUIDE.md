@@ -633,6 +633,14 @@ Create a versioned JSONL or database dataset with at least 40 examples:
 
 Write 10 labels yourself before using any model-assisted labeling. Human labels are the reference, not the judge model.
 
+For this learning project, the 40-case working set may combine the preserved
+human reference set with explicitly provisional model-assisted cases. Have
+Codex check all proposed labels against the sources, then focus human review
+on six instructive judgments and on later disagreements or retrieval failures.
+Report human-reviewed and provisional results separately; a spot-check does
+not validate the other labels. This replaces a blanket requirement to review
+all 40 before experiments. See [ADR 0018](docs/decisions/0018-focused-human-review-and-provisional-evaluation.md).
+
 ## Retrieval experiments
 
 Run controlled comparisons:
