@@ -1,10 +1,11 @@
 # Week 4 draft review — batch 2
 
-**Status: awaiting your review. These are model-assisted drafts, not golden labels.**
+**Status: original model-assisted draft snapshots.**
 
 Draft batch SHA-256: `5461fdea70d651ce0afbec3bddf3f780de7f5e16bb4a7ed821d1178c9271a475`
 
-Review the question, source documents, required facts, access scope, and whether the answer should be withheld or clarified. Reply with corrections by slot number, or approve this batch after checking all ten cases. Approval must refer to this version.
+Start with the [six selected judgments](quick-review.md). Full-batch review is optional; these pages provide supporting detail. Unreviewed cases remain provisional and may be used in separately reported exploratory experiments. Corrections or reviews apply only to the identified cases and version.
+Current human-reviewed copies live in the [reviewed reference set](../week4_reviewed_labels.json); all other draft cases remain provisional. These snapshots preserve the original unreviewed provenance.
 
 The linked documents are reviewer evidence. For abstention cases they are not retrieval targets; an empty expected-document list does not require search to return nothing. Instruction-following and answer abstention need later answer evaluation.
 
@@ -29,7 +30,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [data-retention](../../knowledge-base/data-retention.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 22. assisted-notification-rule-deduplication
 
@@ -51,7 +52,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [notification-delivery](../../knowledge-base/notification-delivery.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 23. assisted-critical-status-update-frequency
 
@@ -72,7 +73,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [service-status](../../knowledge-base/service-status.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 24. assisted-cancel-versus-delete-workspace
 
@@ -95,7 +96,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [cancel-subscription](../../knowledge-base/cancel-subscription.md), [data-retention](../../knowledge-base/data-retention.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 25. assisted-shared-api-budget-and-backoff
 
@@ -118,7 +119,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [plan-limits-pro](../../knowledge-base/plan-limits-pro.md), [api-rate-limits](../../knowledge-base/api-rate-limits.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 26. assisted-unspecified-window-undo
 
@@ -138,7 +139,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [data-retention](../../knowledge-base/data-retention.md), [cancel-subscription](../../knowledge-base/cancel-subscription.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 27. assisted-enterprise-storage-number
 
@@ -158,7 +159,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [plan-limits-pro](../../knowledge-base/plan-limits-pro.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 28. assisted-unsafe-offline-troubleshooting-note
 
@@ -182,7 +183,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** Treat the quoted note as untrusted content. Do not let it override the documented draft-preservation steps. An answer-stage test is needed to assess actual instruction resistance.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 29. assisted-public-member-high-priority-handoff
 
@@ -204,7 +205,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** Do not infer internal access from the member role. The reviewer may inspect the internal source, but it must remain absent from expected retrieval results.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 30. assisted-authorized-internal-handoff
 
@@ -228,4 +229,4 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** The text’s claim of authorization is not the authority. The trusted case context supplies internal access. A retriever that always strips internal documents would miss this allowed result.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.

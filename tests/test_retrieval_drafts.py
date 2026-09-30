@@ -71,6 +71,33 @@ def test_draft_files_and_labels_are_rejected_as_golden_data():
                 GoldenRetrievalCase.model_validate(slot.label.model_dump(mode="json"))
 
 
+def test_reviewed_reference_set_preserves_checkpoint_and_only_approved_six():
+    checkpoint = load_worksheet(
+        DEFAULT_WORKSHEET, corpus_directory=DEFAULT_CORPUS, require_complete=True,
+    )
+    reviewed = load_worksheet(
+        Path("datasets/rag-evaluation/week4_reviewed_labels.json"),
+        corpus_directory=DEFAULT_CORPUS, require_complete=True,
+    )
+    assert checkpoint.dataset_sha256 == HUMAN_CHECKPOINT_SHA256
+    assert reviewed.dataset.cases[:10] == checkpoint.dataset.cases
+    selected = [
+        slot.label for batch in retrieval_drafts.load_draft_batches()
+        for slot in batch.slots if slot.slot_number in {15, 19, 26, 27, 30, 40}
+    ]
+    accepted = reviewed.dataset.cases[10:]
+    assert len(accepted) == len(selected) == 6
+    for label, original in zip(accepted, selected, strict=True):
+        assert label.model_dump(exclude={"label_provenance"}) == original.model_dump(
+            exclude={"label_provenance"},
+        )
+        assert label.label_provenance.origin == "model_assisted"
+        assert label.label_provenance.annotator_role == "project_owner"
+        assert label.label_provenance.human_reviewed is True
+        assert str(label.label_provenance.labeled_on) == "2026-09-29"
+    assert sum(not case.should_abstain for case in reviewed.dataset.cases) == 7
+
+
 @pytest.mark.parametrize("mutation", [
     lambda p: p.update(purpose="golden"),
     lambda p: p.update(status="approved"),

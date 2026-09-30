@@ -1,16 +1,21 @@
-# Week 4: thirty cases for human review
+# Week 4: model-assisted retrieval cases
 
-These are **model-assisted drafts awaiting project-owner review**. They are not
-accepted golden labels. The first ten human labels remain unchanged in
-`../week4_human_labels.json`.
+These files preserve thirty original model-assisted draft snapshots. The
+project owner reviewed six on 2026-09-29; accepted copies now live alongside
+the original ten in [the 16-case reference set](../week4_reviewed_labels.json).
+The remaining 24 are provisional. The first ten human labels remain unchanged
+in `../week4_human_labels.json`.
 
-Start with [batch 1: slots 11–20](batch-1.md), then review
-[batch 2: slots 21–30](batch-2.md) and [batch 3: slots 31–40](batch-3.md).
-Each review sheet contains the question, trusted fictional access scope,
-expected documents, required facts, category, difficulty, rationale, and links
-to the source documents. No provider call is needed to review them.
+The [six reviewed judgments](quick-review.md) are source slots 15, 19, 26,
+27, 30, and 40. Codex has [checked all thirty against the sources](source-check.md).
+Human review of every case is optional; unchecked cases stay provisional and
+can support separately reported experiments under [ADR 0018](../../../docs/decisions/0018-focused-human-review-and-provisional-evaluation.md).
 
-For each case, check:
+Full details remain in [batch 1](batch-1.md), [batch 2](batch-2.md), and
+[batch 3](batch-3.md). They provide the questions, trusted scopes, expected
+documents, required facts, categories, difficulty, rationale, and source links.
+
+When a case needs further review, check:
 
 1. Does the question have the proposed answer, or does it need clarification or
    information absent from the corpus?
@@ -22,14 +27,14 @@ For each case, check:
 4. Is the case meaningfully different from the others, with a sensible category
    and difficulty?
 
-Reply with corrections by slot number, or approve a specific batch after
-reviewing all ten cases. The review sheet's batch hash identifies the exact
-draft version. A structural validation pass or a merged draft PR does not
-constitute human review.
+Reply with corrections or feedback by slot number. Review applies only to the
+content actually checked, not the rest of its batch. The batch hash identifies
+the exact draft version. A source check, structural validation pass, or merged
+PR does not constitute human review.
 
 The approved target mix is:
 
-| Category | Preserved human cases | New drafts | Combined after review |
+| Category | Preserved human cases | Model-assisted cases | Working total |
 |---|---:|---:|---:|
 | Direct fact | 2 | 10 | 12 |
 | Multi-document | 2 | 6 | 8 |
@@ -39,7 +44,7 @@ The approved target mix is:
 | Privacy boundary | 1 | 4 | 5 |
 | Total | 10 | 30 | 40 |
 
-If accepted unchanged, the combined set has 24 cases with relevant documents,
+The combined working set has 24 cases with relevant documents,
 16 abstention cases, and a difficulty mix of 7 easy, 20 medium, and 13 hard.
 Expected references cover all 21 corpus documents. Those counts describe the
 draft design, not measured search quality or accepted labels.
@@ -62,7 +67,19 @@ the new versions. Both commands remain provider-free and database-free. Drafts
 use a separate schema with `origin: model_assisted`, `human_reviewed: false`,
 and no claimed human annotator. Neither command approves or promotes labels.
 
-After explicit human review, approved cases can be copied into a separate
-expanded golden worksheet with their actual review provenance; its first ten
-cases must match the preserved human checkpoint exactly. The dataset's
-40-case completion gate still fails until that accepted artifact exists.
+After review of a complete label, it can be copied into a separate expanded
+golden worksheet with actual review provenance; its first ten cases must match
+the checkpoint exactly. Partial judgment feedback does not approve unreviewed
+fields. The six reviewed cases are copied unchanged apart from provenance;
+their case IDs map source slots 15, 19, 26, 27, 30, and 40 to reviewed worksheet
+slots 11–16. When composing the 40-case working set, use those reviewed copies
+and exclude their draft duplicates by case ID.
+
+The reviewed set contains 7 answerable and 9 abstention cases. The remaining
+24 provisional cases contain 17 answerable and 7 abstention cases. Keep these
+groups separate in future reports.
+
+The current scorer still accepts golden worksheets only. Its `--minimum-cases 40`
+check therefore fails on both the ten-label checkpoint and the 16-case reviewed
+set. Explicit provisional inputs and separate reference/provisional reports are the next implementation
+step; forty human-reviewed labels are no longer a prerequisite for experiments.

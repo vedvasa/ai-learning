@@ -4,6 +4,10 @@
 
 Accepted on 2026-09-01.
 
+The strict golden contract remains in effect. [ADR 0018](0018-focused-human-review-and-provisional-evaluation.md)
+allows separately identified provisional cases in exploratory evaluation;
+human review of every additional case is no longer a prerequisite for experiments.
+
 ## Context
 
 The Week 3 acceptance set measures the complete retrieve-answer-persist path on

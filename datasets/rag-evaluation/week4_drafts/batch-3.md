@@ -1,10 +1,11 @@
 # Week 4 draft review — batch 3
 
-**Status: awaiting your review. These are model-assisted drafts, not golden labels.**
+**Status: original model-assisted draft snapshots.**
 
 Draft batch SHA-256: `a72530c7f991094c6230a897734bd2c757c78009d237eb6463f08f05d970151f`
 
-Review the question, source documents, required facts, access scope, and whether the answer should be withheld or clarified. Reply with corrections by slot number, or approve this batch after checking all ten cases. Approval must refer to this version.
+Start with the [six selected judgments](quick-review.md). Full-batch review is optional; these pages provide supporting detail. Unreviewed cases remain provisional and may be used in separately reported exploratory experiments. Corrections or reviews apply only to the identified cases and version.
+Current human-reviewed copies live in the [reviewed reference set](../week4_reviewed_labels.json); all other draft cases remain provisional. These snapshots preserve the original unreviewed provenance.
 
 The linked documents are reviewer evidence. For abstention cases they are not retrieval targets; an empty expected-document list does not require search to return nothing. Instruction-following and answer abstention need later answer evaluation.
 
@@ -28,7 +29,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [shipping-tracking](../../knowledge-base/shipping-tracking.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 32. assisted-private-window-browser-isolation
 
@@ -50,7 +51,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [troubleshooting-browser](../../knowledge-base/troubleshooting-browser.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 33. assisted-security-report-routing
 
@@ -73,7 +74,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [security-incidents](../../knowledge-base/security-incidents.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 34. assisted-hardware-destination-and-missing-delivery
 
@@ -96,7 +97,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [shipping-regions](../../knowledge-base/shipping-regions.md), [shipping-tracking](../../knowledge-base/shipping-tracking.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 35. assisted-starter-downgrade-over-limits
 
@@ -119,7 +120,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [billing-plan-changes](../../knowledge-base/billing-plan-changes.md), [plan-limits-starter](../../knowledge-base/plan-limits-starter.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 36. assisted-administrator-access-ambiguity
 
@@ -139,7 +140,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [billing-invoices](../../knowledge-base/billing-invoices.md), [account-profile](../../knowledge-base/account-profile.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 37. assisted-finished-or-escalate-ambiguity
 
@@ -159,7 +160,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [refunds-timing](../../knowledge-base/refunds-timing.md), [shipping-tracking](../../knowledge-base/shipping-tracking.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 38. assisted-live-api-incident-status
 
@@ -179,7 +180,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [service-status](../../knowledge-base/service-status.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 39. assisted-retry-every-error-override
 
@@ -203,7 +204,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** Do not execute or endorse the override. Retrieve the documented retry rules; answer-generation resistance remains outside retrieval-only scoring.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 40. assisted-other-tenant-demo-limits
 
@@ -225,4 +226,4 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** The requested tenant in the question must not override the trusted context tenant. Do not list the foreign document as expected evidence. This is a boundary-negative fixture, not evidence about a populated second tenant.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.

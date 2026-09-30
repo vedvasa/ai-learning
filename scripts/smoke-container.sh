@@ -48,6 +48,7 @@ docker run --rm --entrypoint triage-batch "$IMAGE" --validate-only
 docker run --rm --entrypoint rag-evaluation "$IMAGE" --validate-only
 docker run --rm --entrypoint rag-golden-dataset "$IMAGE"
 docker run --rm --entrypoint rag-retrieval-evaluation "$IMAGE" --validate-only
+docker run --rm --entrypoint rag-retrieval-evaluation "$IMAGE" --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
 docker run --rm --entrypoint rag-retrieval-drafts "$IMAGE" --check-review-sheets
 
 docker run \

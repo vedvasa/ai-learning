@@ -34,6 +34,7 @@ jobs:
         run: |
           uv run --no-sync rag-retrieval-drafts --check-review-sheets
           uv run --no-sync rag-retrieval-evaluation --validate-only
+          uv run --no-sync rag-retrieval-evaluation --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
           uv run --no-sync rag-retrieval-evaluation \
             --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
             --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json

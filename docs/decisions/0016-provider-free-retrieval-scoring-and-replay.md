@@ -4,6 +4,10 @@
 
 Accepted for the first objective 4.1b increment on 2026-09-27.
 
+[ADR 0018](0018-focused-human-review-and-provisional-evaluation.md) updates the
+remaining dataset/review plan to permit separately reported provisional
+experiments. The current scorer still accepts golden worksheets only.
+
 ## Context
 
 The ten human reference labels are complete, but the Week 3 evaluator generates
@@ -76,8 +80,9 @@ fictional authorization scopes and do not add authentication to the public API.
 
 ## Remaining objective 4.1b work
 
-Agree on and complete the remaining thirty human-reviewed labels, capture
-query/corpus vectors through an approved workflow, rerun exact search against
+Add explicit provisional inputs with separate human-reference and provisional
+reports under ADR 0018, capture query/corpus vectors through an approved
+workflow, rerun exact search against
 the disposable local database, choose evidence-backed thresholds, and commit
 the actual vector baseline and its limitations. Paid calls and hosted writes
 retain their separate approval boundaries. No keyword/hybrid retrieval,

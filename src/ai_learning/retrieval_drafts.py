@@ -95,13 +95,17 @@ def render_review_sheet(batch: RetrievalDraftBatch) -> str:
     rows = [
         f"# Week 4 draft review — batch {batch.batch_number}",
         "",
-        "**Status: awaiting your review. These are model-assisted drafts, not golden labels.**",
+        "**Status: original model-assisted draft snapshots.**",
         "",
         f"Draft batch SHA-256: `{canonical_sha256(batch)}`",
         "",
-        "Review the question, source documents, required facts, access scope, and whether "
-        "the answer should be withheld or clarified. Reply with corrections by slot number, "
-        "or approve this batch after checking all ten cases. Approval must refer to this version.",
+        "Start with the [six selected judgments](quick-review.md). Full-batch review is "
+        "optional; these pages provide supporting detail. Unreviewed cases remain provisional "
+        "and may be used in separately reported exploratory experiments. "
+        "Corrections or reviews apply only to the identified cases and version.",
+        "Current human-reviewed copies live in the [reviewed reference set]"
+        "(../week4_reviewed_labels.json); all other draft cases remain provisional. "
+        "These snapshots preserve the original unreviewed provenance.",
         "",
         "The linked documents are reviewer evidence. For abstention cases they are not "
         "retrieval targets; an empty expected-document list does not require search to return "
@@ -146,7 +150,7 @@ def render_review_sheet(batch: RetrievalDraftBatch) -> str:
         ])
         if case.adversarial_notes:
             rows.extend(["", f"**Boundary/adversarial notes:** {case.adversarial_notes}"])
-        rows.extend(["", "**Human review:** pending."])
+        rows.extend(["", "**Original draft provenance:** unreviewed; consult the reviewed reference set for current status."])
     return "\n".join(rows) + "\n"
 
 
@@ -176,8 +180,8 @@ def run_cli(args: argparse.Namespace) -> int:
     except (OSError, UnicodeError):
         print("Draft validation error: could not read or write review sheets.", file=sys.stderr)
         return 2
-    print("Validated 30 unreviewed drafts in 3 batches; 10 accepted human labels unchanged. "
-          "No drafts were approved or added to golden data.")
+    print("Validated 30 original draft snapshots in 3 batches; 10 human labels unchanged. "
+          "Current review status is recorded separately. This command approves no labels.")
     return 0
 
 

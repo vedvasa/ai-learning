@@ -1,15 +1,16 @@
 # Current milestone: Week 4 RAG Quality Lab
 
-Last updated: 2026-09-27
+Last updated: 2026-09-29
 
 Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
 `84ec22b`. The provider-free retrieval scorer merged in
 [PR #34](https://github.com/vedvasa/ai-learning/pull/34) at `ee7e3d1`.
-The next thirty model-assisted cases are prepared for human review in
-[PR #35](https://github.com/vedvasa/ai-learning/pull/35), implementation commit
-`57077ca` on `codex/week4-dataset-drafts`. Only the original ten labels are accepted golden
-data; the expanded dataset and measured vector baseline remain incomplete.
+[PR #35](https://github.com/vedvasa/ai-learning/pull/35) now includes thirty
+model-assisted source cases and the owner's review of six selected judgments.
+The working set is **16 reviewed cases plus 24 provisional cases**; the original
+ten remain unchanged. Separate provisional scoring and the measured vector
+baseline remain incomplete. Full-batch human review is no longer a prerequisite.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -87,10 +88,10 @@ uv run --no-sync rag-golden-dataset --require-complete
 
 The canonical completed dataset SHA-256 is
 `092042662d3d2b5e641d70a26f8f241a02344471dd05b60df14462a22b7b3418`.
-Later work must preserve these ten labels unchanged. Do not begin
-model-assisted labeling or create the remaining 30 cases until objective 4.1b
-agrees on labeling provenance and review. Paid vector baselines and remote
-database writes still require separate explicit approval.
+Later work must preserve these ten labels unchanged. Model-assisted drafting
+and the focused review policy are now authorized; see the current objective
+and ADR 0018. Paid vector baselines and remote database writes still require
+separate explicit approval.
 
 ### Provider-free verification on 2026-09-23
 
@@ -146,82 +147,101 @@ runtime retrieval, database schema, or deployment behavior changed.
   new evaluator's provider-free validation command.
 - `git diff --check` passed. No paid calls or hosted mutations were performed.
 
-## Current objective: 4.1b draft review and dataset completion
+## Current objective: 4.1b separate evaluation groups and vector baseline
 
-The project owner approved model-assisted drafting in three batches of ten,
-followed by project-owner review before acceptance. The agreed final mix is
-12 direct-fact, 8 multi-document, and 5 each of ambiguous, unanswerable,
-adversarial, and privacy-boundary cases.
+The project owner approved a lighter review workflow on 2026-09-29: Codex
+checks all thirty model-assisted cases against the sources, the owner reviews
+six instructive judgments, and the rest remain provisional. ADR 0018 updates
+the earlier blanket human-review requirement. The guide now permits a 40-case
+working set with separately reported human-reviewed and provisional results.
 
-Thirty drafts are now prepared under `datasets/rag-evaluation/week4_drafts/`:
+### Completed source check and focused review
 
-- [Batch 1, slots 11–20](../datasets/rag-evaluation/week4_drafts/batch-1.md)
-- [Batch 2, slots 21–30](../datasets/rag-evaluation/week4_drafts/batch-2.md)
-- [Batch 3, slots 31–40](../datasets/rag-evaluation/week4_drafts/batch-3.md)
+- Codex read all 21 corpus documents and checked all thirty proposed cases;
+  no factual corrections were identified. The [source-check record](../datasets/rag-evaluation/week4_drafts/source-check.md)
+  documents the findings and limitations. This check is not human validation.
+- The owner reviewed source slots **15, 19, 26, 27, 30, and 40**, responding
+  “These six judgments look right” to the [short review](../datasets/rag-evaluation/week4_drafts/quick-review.md).
+  No further batch-review round is required before preparing experiments.
+- `datasets/rag-evaluation/week4_reviewed_labels.json` contains the exact
+  original ten followed by those six unchanged labels, with model-assisted
+  origin, project-owner review, and date 2026-09-29. Canonical dataset SHA-256:
+  `48aebb88f953b10db215146e77b50f2f5e4a44f69692bfd837dc5cb05341baff`.
+- The original ten-label file and all three draft JSON files remain unchanged.
+  Drafts retain their original unreviewed provenance as snapshots; use case IDs
+  to match the six accepted copies to their source slots.
+- The working mix remains 12 direct-fact, 8 multi-document, and 5 each of
+  ambiguous, unanswerable, adversarial, and privacy-boundary cases. Expected
+  references cover all 21 documents. These are coverage counts, not quality
+  measurements.
 
-Each draft carries model-assisted provenance and `human_reviewed=false`. JSON
-is the draft source; generated Markdown contains the review rationale, source
-links, and canonical batch hash. ADR 0017 defines the separate draft contract
-and acceptance boundary. A merged draft PR or passing validator does not
-constitute human label review.
+| Evaluation group | Cases | With relevance labels | Abstention cases |
+|---|---:|---:|---:|
+| Human-reviewed reference | 16 | 7 | 9 |
+| Provisional model-assisted | 24 | 17 | 7 |
+| Working total | 40 | 24 | 16 |
 
-If accepted unchanged, the combined set would contain 24 answerable cases and
-16 abstention cases, with 7 easy, 20 medium, and 13 hard questions. Expected
-document references cover all 21 corpus documents. New privacy cases include
-public-only denials, explicitly authorized internal access, and an empty-corpus
-tenant boundary. None changes the live API's authorization behavior.
+Compose the working set from the reviewed worksheet plus the draft cases whose
+IDs are absent from that worksheet. Do not count the six accepted cases twice,
+blend provisional scores into golden quality, or rewrite the frozen checkpoint.
+Review status and exact inputs must be pinned in comparisons. Provisional
+relevance scores guide diagnosis; human-reference scores drive acceptance.
+Execution failures and unauthorized results fail checks in either group.
 
-Validate this review package with:
+Validate the package without providers or a database:
 
 ```bash
 uv run --no-sync rag-retrieval-drafts --check-review-sheets
+uv run --no-sync rag-retrieval-evaluation \
+  --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
 ```
 
-This remains provider-free and database-free. Validation checks draft structure,
-source pins, category counts, uniqueness across all forty proposed cases, the
-unchanged human checkpoint, and review-sheet consistency. It never approves or
-promotes a draft. The accepted golden dataset still has ten cases, and its
-40-case gate intentionally remains unsatisfied.
+The current scorer accepts golden worksheets only. It can validate the 16-case
+reference set, but cannot yet load provisional cases or execute vector search.
+Its `--minimum-cases 40` option still means forty labels in the supplied golden
+worksheet, not completion of the mixed working set. The old synthetic fixture
+still covers only the original ten and is not compatible with the new hash.
 
-### Draft-package verification on 2026-09-27
+### Verification on 2026-09-29
 
-- Locked installation and full provider-free suite passed: 280 tests passed;
-  6 disposable local database tests were skipped because that stack was not
-  running.
-- All thirty drafts and all three generated review sheets passed validation.
-  Tests reject false review claims, stale references, unauthorized expected
-  evidence, duplicate questions/IDs, and accidental use of drafts as golden data.
-- Existing triage, Week 3 RAG, and ten-case human-checkpoint hashes are unchanged;
-  the existing retrieval evaluator still validates the original checkpoint.
-- The local production image built and all smoke checks passed, including the
-  draft validator inside the image. `git diff --check` passed.
-- No labels have been human-reviewed or promoted by this increment; no paid
-  model calls, hosted database operations, or deployments were performed.
+- Locked non-editable installation passed. After caching public tokenizer data,
+  the full provider-free suite passed: **281 passed, 6 skipped**. Skips require
+  the disposable local database; no remote database was substituted.
+- Original dataset hashes and all three draft JSON files are unchanged. The
+  new 16-case set validates against the corpus and frozen human checkpoint.
+  A regression test checks that exactly the approved six were copied, with
+  unchanged content and honest review provenance.
+- All offline dataset checks and the original synthetic replay passed. No
+  real vector quality is inferred from that replay.
+- Local image build stalled while resolving the pinned Docker frontend image
+  from the registry and was canceled; the local smoke test did not run. The PR
+  workflow also builds and smoke-tests the production image.
+- No paid calls, hosted writes, deployment, or real vector measurement occurred.
 
-### Next implementation and review steps
+### Next implementation steps
 
-1. The project owner reviews the three actual draft versions, supplies
-   corrections by slot number, and explicitly approves each reviewed batch.
-   Regenerate sheets and obtain review of the changed version after corrections.
-2. Record actual review provenance and copy approved cases into a separate
-   expanded golden worksheet. Keep the original ten-label file unchanged and
-   preserve those exact first ten cases in the expanded worksheet. Validate the
-   completed forty-case artifact before treating it as the evaluation dataset.
-3. Add an explicit capture and re-execution path for real vector evidence,
-   including query and corpus vectors, actual chunk identities, configuration,
-   and source timings. Use the disposable local database for search tests and
-   make telemetry writes explicit. Paid calls and hosted writes require
-   separate approval.
-4. Complete at least 40 reviewed cases, capture the exact vector baseline,
-   choose thresholds using the evidence, and document limitations before 4.2.
+1. Add explicit provisional inputs and separate reference/provisional reports
+   to the retrieval evaluator. Preserve strict golden validation and pin the
+   exact 40-case composition. Add deterministic tests for duplicate exclusion,
+   changed review status, separate metric denominators, and leakage/failure
+   checks. No further blanket human review blocks this work.
+2. Add capture and local re-execution of real vector evidence, including query
+   and corpus vectors, actual chunk identities, configuration, and source
+   timings. Use disposable local Supabase for search tests and make any
+   telemetry writes explicit. Paid calls and hosted writes require approval.
+3. Capture the exact vector baseline, investigate retrieval misses and disputed
+   labels, select evidence-backed thresholds, and document limitations before
+   objective 4.2. Human-reference relevance has only seven answerable cases;
+   provisional results cannot establish independent ground truth.
 
-The current command can replay saved rankings only. The remaining work must not
-be reported as complete just because its synthetic scoring fixture passes.
+Do not report objective 4.1b complete from drafted cases or synthetic scoring.
 
 ## Broader objective: 4.1 golden retrieval dataset and baseline
 
-Create a versioned retrieval-focused golden dataset with at least 40 examples
-and a reproducible, provider-free vector-only evaluation baseline.
+Create a versioned retrieval working set with at least 40 examples, a preserved
+human-reviewed reference subset, explicitly provisional additional cases, and
+a reproducible, provider-free vector-only evaluation baseline. ADR 0018 records
+the approved adjustment from forty golden labels to separately reported groups.
 
 This objective should include:
 
@@ -285,7 +305,8 @@ because they are popular.
 
 ## Objective 4.1 definition of done
 
-- The dataset schema and at least 40 valid cases are committed.
+- At least 40 valid working cases are committed with explicit review status;
+  reference and provisional counts and metrics are reported separately.
 - The first 10 human labels are identifiable as user-authored provenance without
   storing personal information.
 - One command reproduces the provider-free vector-only evaluation.
@@ -302,10 +323,10 @@ The reusable opening and closing templates live in
 this ready-to-copy version:
 
 ```text
-Continue objective 4.1b after the thirty-case model-assisted draft package.
-The ten human labels are frozen. Drafting is authorized; review and acceptance
-of the actual batches, the 40-case golden dataset, and the measured vector
-baseline are still pending.
+Continue objective 4.1b with 16 reviewed cases and 24 provisional cases.
+The original ten are frozen; the owner has reviewed source slots 15, 19, 26,
+27, 30, and 40. Further batch review is optional. Implement separate evaluation
+groups, then real vector capture/local re-execution and the measured baseline.
 
 Read AGENTS.md, docs/CURRENT_MILESTONE.md, the Week 4 section of
 PRODUCTION_AI_SELF_LEARNING_GUIDE.md, LEARNING_PROGRESS_TRACKER.md, relevant
@@ -317,11 +338,11 @@ Before making changes:
    create, rewrite, or silently repair any of those labels.
 3. Inspect the scorer, ADR 0016, and retrieval code; distinguish replayed
    synthetic metrics from actual measured vector quality.
-4. Read ADR 0017 and the draft review sheets. Do not mark drafts human-reviewed
-   without actual project-owner review of their exact version. Preserve
-   model-assisted origin when approved cases enter the expanded worksheet.
-5. Propose the next small increment for accepted dataset completion, vector
-   capture, local re-execution, and the measured baseline. Paid calls, hosted
+4. Read ADR 0018 and the six-case review record. Use the reviewed worksheet
+   plus the remaining draft case IDs without duplicating the accepted six.
+   Preserve provenance; report human-reference and provisional metrics separately.
+5. Propose the next small increment for provisional evaluation, vector capture,
+   local re-execution, and the measured baseline. Paid calls, hosted
    writes, destructive actions, and cloud changes need separate approval.
 
 Never read any secret value. If secret setup becomes necessary, give me exact

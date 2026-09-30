@@ -5,6 +5,10 @@
 Accepted on 2026-09-27 after the project owner authorized thirty drafts in three
 batches of ten for human review.
 
+Partially superseded on 2026-09-29 by [ADR 0018](0018-focused-human-review-and-provisional-evaluation.md):
+full-batch review is optional, and provisional cases may support separately
+reported experiments. Golden provenance and the frozen checkpoint remain strict.
+
 ## Context
 
 The first ten labels are a frozen human-authored checkpoint. The approved next

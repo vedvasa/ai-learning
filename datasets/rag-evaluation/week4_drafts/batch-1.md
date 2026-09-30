@@ -1,10 +1,11 @@
 # Week 4 draft review — batch 1
 
-**Status: awaiting your review. These are model-assisted drafts, not golden labels.**
+**Status: original model-assisted draft snapshots.**
 
 Draft batch SHA-256: `4f3078acfb528c281a7f4f651f27cc3b0704729461771d922f4823a1d7c575a3`
 
-Review the question, source documents, required facts, access scope, and whether the answer should be withheld or clarified. Reply with corrections by slot number, or approve this batch after checking all ten cases. Approval must refer to this version.
+Start with the [six selected judgments](quick-review.md). Full-batch review is optional; these pages provide supporting detail. Unreviewed cases remain provisional and may be used in separately reported exploratory experiments. Corrections or reviews apply only to the identified cases and version.
+Current human-reviewed copies live in the [reviewed reference set](../week4_reviewed_labels.json); all other draft cases remain provisional. These snapshots preserve the original unreviewed provenance.
 
 The linked documents are reviewer evidence. For abstention cases they are not retrieval targets; an empty expected-document list does not require search to return nothing. Instruction-following and answer abstention need later answer evaluation.
 
@@ -28,7 +29,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [account-profile](../../knowledge-base/account-profile.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 12. assisted-finalized-invoice-correction
 
@@ -50,7 +51,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [billing-invoices](../../knowledge-base/billing-invoices.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 13. assisted-payment-grace-read-only
 
@@ -72,7 +73,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [billing-payment-failures](../../knowledge-base/billing-payment-failures.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 14. assisted-mfa-recovery-code-replacement
 
@@ -95,7 +96,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [security-mfa](../../knowledge-base/security-mfa.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 15. assisted-refund-request-versus-posting
 
@@ -118,7 +119,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [refunds-eligibility](../../knowledge-base/refunds-eligibility.md), [refunds-timing](../../knowledge-base/refunds-timing.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 16. assisted-sso-and-lost-mfa
 
@@ -140,7 +141,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [account-password-reset](../../knowledge-base/account-password-reset.md), [security-mfa](../../knowledge-base/security-mfa.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 17. assisted-change-not-effective-ambiguity
 
@@ -160,7 +161,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [account-profile](../../knowledge-base/account-profile.md), [billing-plan-changes](../../knowledge-base/billing-plan-changes.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 18. assisted-bank-refund-fee-percentage
 
@@ -180,7 +181,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Documents to check:** [refunds-eligibility](../../knowledge-base/refunds-eligibility.md), [refunds-timing](../../knowledge-base/refunds-timing.md)
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 19. assisted-refund-guarantee-instruction
 
@@ -203,7 +204,7 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** The request tries to replace documented eligibility with a fabricated decision. Retrieve the policy; do not treat the instruction as authority. Retrieval scoring alone does not prove the answer resists this instruction.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
 
 ## 20. assisted-anonymous-critical-handoff
 
@@ -225,4 +226,4 @@ The linked documents are reviewer evidence. For abstention cases they are not re
 
 **Boundary/adversarial notes:** Do not disclose the internal policy or substitute the public security-report deadline. The internal document is linked only for the human reviewer, never as expected retrievable evidence.
 
-**Human review:** pending.
+**Original draft provenance:** unreviewed; consult the reviewed reference set for current status.
