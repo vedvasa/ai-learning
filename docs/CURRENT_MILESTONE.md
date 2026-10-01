@@ -9,7 +9,8 @@ Status: Objective 4.1a human checkpoint merged in
 [PR #35](https://github.com/vedvasa/ai-learning/pull/35) now includes thirty
 model-assisted source cases and the owner's review of six selected judgments.
 The working set is **16 reviewed cases plus 24 provisional cases**; the original
-ten remain unchanged. The follow-up on `codex/week4-vector-baseline` implements
+ten remain unchanged. [PR #36](https://github.com/vedvasa/ai-learning/pull/36)
+(implementation commit `59376a0`, branch `codex/week4-vector-baseline`) implements
 separate group scoring, explicit vector capture, and provider-free local SQL
 re-execution. Real paid capture and the measured baseline remain pending.
 PR #35 is still open; the follow-up is stacked on its branch. No batch review
@@ -262,8 +263,9 @@ complete objective 4.1b.
 
 ### Remaining acceptance steps
 
-1. Finish CI on the stacked implementation PR; merge PR #35 first and leave
-   merge decisions with the owner. No deployment is necessary.
+1. Finish CI on [PR #36](https://github.com/vedvasa/ai-learning/pull/36); merge
+   PR #35 first, then retarget #36 to `main`. Leave merge decisions with the
+   owner. No deployment is necessary.
 2. Immediately before the paid step, obtain approval for one capture of the
    current 103 fictional inputs (63 chunks + 40 questions), at most two API
    requests, with a 4,000-input-token preflight limit. The user runs the hidden
