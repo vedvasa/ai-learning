@@ -416,8 +416,9 @@ The replay command writes aggregate `report.json` and `report.md` under ignored
 source latency, failures, and leakage, with category breakdowns. Cases without
 relevance labels are reported separately; no answers are generated. Synthetic
 rankings test the scorer only. Replaying rankings does not rerun vector search
-or constitute the measured Week 4 baseline. Evaluation of the 40-case working
-set, real vector capture, and search-regression checks remain pending. See
+or constitute the measured Week 4 baseline. The 40-case working set now supports
+separate reviewed/provisional reports and local execution of saved vectors;
+actual paid capture and measured quality remain pending. See
 [ADR 0016](docs/decisions/0016-provider-free-retrieval-scoring-and-replay.md) and
 the [evaluation runbook](docs/DATABASE_DEVELOPMENT.md#score-week-4-retrieval-results-offline).
 
@@ -436,10 +437,24 @@ uv run --no-sync rag-retrieval-evaluation --worksheet datasets/rag-evaluation/we
 ```
 
 This checks the agreed category mix, source pins, and unchanged human checkpoint;
-it does not approve labels. The current scorer still accepts only golden
-worksheets. Explicit provisional inputs and separate reference/provisional
-reports are the next increment; no forty-label human-review gate blocks that
-work. See [ADR 0018](docs/decisions/0018-focused-human-review-and-provisional-evaluation.md).
+it does not approve labels. Include the remaining provisional cases explicitly:
+
+```bash
+uv run --no-sync rag-retrieval-evaluation --include-provisional --minimum-cases 40 --validate-only
+uv run --no-sync rag-vector-baseline --plan
+```
+
+The working set contains 16 reviewed and 24 provisional cases with separate
+metrics and category breakdowns. Reviewed relevance regression controls
+acceptance; provisional relevance scores guide investigation. Failures and
+leakage fail either group. A mixed overall relevance score is never reported.
+
+`rag-vector-baseline` can capture embeddings once after explicit spend approval
+and rerun the application's exact cosine search in temporary local Supabase
+tables without further model calls or persistent writes. It records real local
+search timing and rolls back the tables. See the
+[capture/run instructions](docs/DATABASE_DEVELOPMENT.md#capture-and-execute-the-week-4-vector-baseline)
+and [ADR 0019](docs/decisions/0019-provenance-separated-vector-baseline.md).
 
 ## OpenAI connectivity check
 

@@ -1,6 +1,6 @@
 # Current milestone: Week 4 RAG Quality Lab
 
-Last updated: 2026-09-29
+Last updated: 2026-09-30
 
 Status: Objective 4.1a human checkpoint merged in
 [PR #32](https://github.com/vedvasa/ai-learning/pull/32) at merge commit
@@ -9,8 +9,11 @@ Status: Objective 4.1a human checkpoint merged in
 [PR #35](https://github.com/vedvasa/ai-learning/pull/35) now includes thirty
 model-assisted source cases and the owner's review of six selected judgments.
 The working set is **16 reviewed cases plus 24 provisional cases**; the original
-ten remain unchanged. Separate provisional scoring and the measured vector
-baseline remain incomplete. Full-batch human review is no longer a prerequisite.
+ten remain unchanged. The follow-up on `codex/week4-vector-baseline` implements
+separate group scoring, explicit vector capture, and provider-free local SQL
+re-execution. Real paid capture and the measured baseline remain pending.
+PR #35 is still open; the follow-up is stacked on its branch. No batch review
+or deployment is required before the experiment.
 
 Starting release: `v0.3.0` at commit `1dba96aed7cc7aec3a0d50609b9d42b71d591b31`
 
@@ -196,11 +199,33 @@ uv run --no-sync rag-retrieval-evaluation \
   --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
 ```
 
-The current scorer accepts golden worksheets only. It can validate the 16-case
-reference set, but cannot yet load provisional cases or execute vector search.
-Its `--minimum-cases 40` option still means forty labels in the supplied golden
-worksheet, not completion of the mixed working set. The old synthetic fixture
-still covers only the original ten and is not compatible with the new hash.
+### Completed implementation: separate groups and vector execution
+
+- `rag-retrieval-evaluation --include-provisional --minimum-cases 40` composes
+  the reviewed worksheet and remaining draft IDs, checks accepted copies, and
+  pins all label content/provenance. Working-set SHA-256:
+  `c0c2ee0f8416a079336560271f9ea0376d74aa32f6ed67c0023e3f3c78806c4a`.
+- Reports include separate group/category metrics. Mixed relevance averages
+  are omitted; reviewed relevance regressions gate acceptance, provisional
+  deltas are diagnostic, and errors/leakage fail either group.
+- `rag-vector-baseline --plan` reports 21 documents, 63 chunks, 40 questions,
+  approximately 3,791 input tokens and at most two embedding API requests.
+- `--capture-to` requires explicit spend acknowledgment, a token allowance,
+  clean committed source, and hidden operator API-key entry. It makes no DB
+  calls, stores no credential or raw text, and does not load `.env`.
+- `--execute` validates captured vectors against the current labels/corpus/
+  chunker and runs the application's exact SQL against temporary local
+  Supabase tables. It rolls back and closes the connection, with no persistent
+  ingestion, conversation, or telemetry writes. Comparisons pin the capture
+  hash and distinguish SQL execution from saved-ranking replay.
+- The production image caches the public tokenizer asset and smoke-tests
+  planning with network access disabled. CI includes synthetic-vector local
+  SQL integration tests; those scores do not measure real embedding quality.
+
+ADR 0019 records the execution and evidence boundaries. The exact paid and
+provider-free commands are in `docs/DATABASE_DEVELOPMENT.md`. No real capture
+has yet been executed; neither a working-set count nor synthetic scores
+complete objective 4.1b.
 
 ### Verification on 2026-09-29
 
@@ -218,23 +243,38 @@ still covers only the original ten and is not compatible with the new hash.
   workflow also builds and smoke-tests the production image.
 - No paid calls, hosted writes, deployment, or real vector measurement occurred.
 
-### Next implementation steps
+### Current verification on 2026-09-30
 
-1. Add explicit provisional inputs and separate reference/provisional reports
-   to the retrieval evaluator. Preserve strict golden validation and pin the
-   exact 40-case composition. Add deterministic tests for duplicate exclusion,
-   changed review status, separate metric denominators, and leakage/failure
-   checks. No further blanket human review blocks this work.
-2. Add capture and local re-execution of real vector evidence, including query
-   and corpus vectors, actual chunk identities, configuration, and source
-   timings. Use disposable local Supabase for search tests and make any
-   telemetry writes explicit. Paid calls and hosted writes require approval.
-3. Capture the exact vector baseline, investigate retrieval misses and disputed
-   labels, select evidence-backed thresholds, and document limitations before
-   objective 4.2. Human-reference relevance has only seven answerable cases;
-   provisional results cannot establish independent ground truth.
+- Separate-group/scorer tests pass, including reviewed-only regression gates,
+  provisional failure/leakage, accepted-draft deduplication, and review-status
+  hash changes.
+- Local database execution tests pass against disposable Supabase, exercising
+  the real search query, authorized internal access, an empty second tenant,
+  deterministic ordering, rollback, and unchanged persistent chunk counts.
+- Local schema contract tests: 27 passed; schema lint found no errors.
+- Local production image build and smoke checks passed, including offline
+  vector planning with the network disabled.
+- Full provider-free suite: **313 passed, 8 database tests skipped**. All eight
+  database integration tests passed separately against local Supabase.
+- Original checkpoint, reviewed-set, Week 3, and triage hashes are unchanged.
+  No paid calls, hosted writes, deployment, or measured embedding quality has
+  been claimed. CI status is attached to the implementation PR.
 
-Do not report objective 4.1b complete from drafted cases or synthetic scoring.
+### Remaining acceptance steps
+
+1. Finish CI on the stacked implementation PR; merge PR #35 first and leave
+   merge decisions with the owner. No deployment is necessary.
+2. Immediately before the paid step, obtain approval for one capture of the
+   current 103 fictional inputs (63 chunks + 40 questions), at most two API
+   requests, with a 4,000-input-token preflight limit. The user runs the hidden
+   API-key prompt; Codex never reads, requests, or enters the key itself.
+3. After capture, run `rag-vector-baseline --execute` against disposable local
+   Supabase, repeat the execution with baseline comparison, and inspect misses.
+   Record real captured vectors, exact rankings, separate metrics, usage and
+   limitations as fictional baseline evidence before proceeding to 4.2.
+4. Choose thresholds from evidence. The reviewed relevance denominator is only
+   seven answerable cases; provisional results are diagnostic. A changed
+   chunker invalidates the old vector mapping and requires its own experiment.
 
 ## Broader objective: 4.1 golden retrieval dataset and baseline
 
@@ -283,8 +323,9 @@ author the first 10 human-reference labels on the user's behalf.
 
 ## Open decisions
 
-- Whether deterministic CI should use committed query vectors, recorded ranked
-  results, or an injected fake retriever at each evaluation layer.
+- How much real captured-vector evidence to commit after the paid run. Current
+  CI uses synthetic vectors to execute the shared SQL and saved rankings to
+  test scoring; neither is presented as the measured baseline.
 - Initial regression thresholds after the 40-case vector baseline is measured.
 - Whether the optional failure-case dashboard belongs in the core Week 4 scope
   or remains a stretch goal.
@@ -325,8 +366,9 @@ this ready-to-copy version:
 ```text
 Continue objective 4.1b with 16 reviewed cases and 24 provisional cases.
 The original ten are frozen; the owner has reviewed source slots 15, 19, 26,
-27, 30, and 40. Further batch review is optional. Implement separate evaluation
-groups, then real vector capture/local re-execution and the measured baseline.
+27, 30, and 40. Separate-group scoring and the vector capture/local execution
+workflow are implemented on codex/week4-vector-baseline, stacked on PR #35.
+Paid capture and measured evidence remain pending; no more batch review is required.
 
 Read AGENTS.md, docs/CURRENT_MILESTONE.md, the Week 4 section of
 PRODUCTION_AI_SELF_LEARNING_GUIDE.md, LEARNING_PROGRESS_TRACKER.md, relevant
@@ -338,11 +380,12 @@ Before making changes:
    create, rewrite, or silently repair any of those labels.
 3. Inspect the scorer, ADR 0016, and retrieval code; distinguish replayed
    synthetic metrics from actual measured vector quality.
-4. Read ADR 0018 and the six-case review record. Use the reviewed worksheet
+4. Read ADRs 0018–0019 and the six-case review record. Use the reviewed worksheet
    plus the remaining draft case IDs without duplicating the accepted six.
    Preserve provenance; report human-reference and provisional metrics separately.
-5. Propose the next small increment for provisional evaluation, vector capture,
-   local re-execution, and the measured baseline. Paid calls, hosted
+5. Validate the capture plan and implementation. Obtain approval immediately
+   before paid capture; the user enters any secret at a hidden prompt. Then
+   execute and record the baseline locally. Paid calls, hosted
    writes, destructive actions, and cloud changes need separate approval.
 
 Never read any secret value. If secret setup becomes necessary, give me exact

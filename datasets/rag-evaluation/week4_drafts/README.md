@@ -79,7 +79,10 @@ The reviewed set contains 7 answerable and 9 abstention cases. The remaining
 24 provisional cases contain 17 answerable and 7 abstention cases. Keep these
 groups separate in future reports.
 
-The current scorer still accepts golden worksheets only. Its `--minimum-cases 40`
-check therefore fails on both the ten-label checkpoint and the 16-case reviewed
-set. Explicit provisional inputs and separate reference/provisional reports are the next implementation
-step; forty human-reviewed labels are no longer a prerequisite for experiments.
+The scorer accepts the combined set with `--include-provisional`; its default
+worksheet in that mode is the 16-case reviewed set. It validates the accepted
+copies, excludes their draft duplicates, hashes the exact composition, and
+reports reviewed/provisional groups separately. Use
+`rag-retrieval-evaluation --include-provisional --minimum-cases 40 --validate-only`.
+Without this flag, `--minimum-cases 40` still applies only to the supplied
+golden worksheet and fails on a ten- or sixteen-case set.
