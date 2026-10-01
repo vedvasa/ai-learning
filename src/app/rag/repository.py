@@ -6,6 +6,7 @@ from typing import Any, Literal, Sequence
 from uuid import UUID, uuid4
 
 import psycopg
+from psycopg import sql
 
 from app.providers.base import ProviderName
 from app.rag.chunking import DocumentChunk
@@ -226,12 +227,43 @@ class PsycopgKnowledgeRepository:
             raise ValueError("top_k must be positive")
         if not allowed_visibilities:
             raise ValueError("allowed_visibilities must not be empty")
-
-        serialized_embedding = self._serialize_vector(query_embedding)
         try:
             with psycopg.connect(self._database_url, autocommit=True) as connection:
-                rows = connection.execute(
-                    """
+                return self.search_chunks_on_connection(
+                    connection, tenant_id=tenant_id, query_embedding=query_embedding,
+                    embedding_model=embedding_model, embedding_dimensions=embedding_dimensions,
+                    top_k=top_k, minimum_similarity=minimum_similarity,
+                    allowed_visibilities=allowed_visibilities,
+                )
+        except psycopg.Error as error:
+            raise KnowledgeSearchError("knowledge search failed") from error
+
+    @staticmethod
+    def search_chunks_on_connection(
+        connection,
+        *,
+        tenant_id: str,
+        query_embedding: Sequence[float],
+        embedding_model: str,
+        embedding_dimensions: int,
+        top_k: int,
+        minimum_similarity: float,
+        allowed_visibilities: Sequence[str],
+        namespace: Literal["knowledge", "pg_temp"] = "knowledge",
+    ) -> tuple[RetrievedChunk, ...]:
+        # The evaluator uses the identical query over transaction-local copies.
+        if namespace not in {"knowledge", "pg_temp"}:
+            raise ValueError("unsupported search namespace")
+        if len(query_embedding) != embedding_dimensions:
+            raise ValueError("query embedding dimension does not match contract")
+        if top_k <= 0:
+            raise ValueError("top_k must be positive")
+        if not allowed_visibilities:
+            raise ValueError("allowed_visibilities must not be empty")
+
+        serialized_embedding = PsycopgKnowledgeRepository._serialize_vector(query_embedding)
+        rows = connection.execute(
+            sql.SQL("""
                     with query_vector as (
                         select %s::extensions.vector as embedding
                     ),
@@ -256,11 +288,11 @@ class PsycopgKnowledgeRepository:
                                     query_vector.embedding
                                 )
                             )::double precision as similarity
-                        from knowledge.chunks as chunk
-                        join knowledge.document_versions as version
+                        from {namespace}.chunks as chunk
+                        join {namespace}.document_versions as version
                             on version.id = chunk.document_version_id
                             and version.tenant_id = chunk.tenant_id
-                        join knowledge.documents as document
+                        join {namespace}.documents as document
                             on document.id = version.document_id
                             and document.tenant_id = version.tenant_id
                         cross join query_vector
@@ -276,19 +308,17 @@ class PsycopgKnowledgeRepository:
                     where similarity >= %s
                     order by similarity desc, chunk_id
                     limit %s
-                    """,
-                    (
-                        serialized_embedding,
-                        tenant_id,
-                        list(allowed_visibilities),
-                        embedding_model,
-                        embedding_dimensions,
-                        minimum_similarity,
-                        top_k,
-                    ),
-                ).fetchall()
-        except psycopg.Error as error:
-            raise KnowledgeSearchError("knowledge search failed") from error
+                    """).format(namespace=sql.Identifier(namespace)),
+            (
+                serialized_embedding,
+                tenant_id,
+                list(allowed_visibilities),
+                embedding_model,
+                embedding_dimensions,
+                minimum_similarity,
+                top_k,
+            ),
+        ).fetchall()
 
         return tuple(
             RetrievedChunk(

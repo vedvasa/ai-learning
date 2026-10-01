@@ -20,6 +20,10 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
+# Pin/cache the public tokenizer asset at build time for offline evaluation.
+RUN TIKTOKEN_CACHE_DIR=/app/tiktoken-cache .venv/bin/python -c \
+    "import tiktoken; tiktoken.get_encoding('cl100k_base')"
+
 
 FROM python:3.14.7-slim-bookworm@sha256:23c59390fc717bf09f9336908199a0ae75d9c4264bf296123f94ad772fea3b52 AS runtime
 
@@ -28,7 +32,8 @@ ENV APP_ENV=production \
     PATH="/app/.venv/bin:$PATH" \
     PORT=8080 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    TIKTOKEN_CACHE_DIR=/app/tiktoken-cache
 
 RUN groupadd --gid 10001 app \
     && useradd --uid 10001 --gid 10001 --no-create-home \
@@ -37,6 +42,7 @@ RUN groupadd --gid 10001 app \
 WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/tiktoken-cache /app/tiktoken-cache
 COPY datasets ./datasets
 COPY --chmod=0555 scripts/start-container.sh ./scripts/start-container.sh
 

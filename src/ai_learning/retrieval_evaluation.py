@@ -12,12 +12,14 @@ from pydantic import ValidationError
 from ai_learning.golden_retrieval import (
     DEFAULT_CORPUS,
     DEFAULT_WORKSHEET,
-    HUMAN_CHECKPOINT_SHA256,
     GoldenDatasetError,
-    load_worksheet,
+    canonical_sha256,
+)
+from ai_learning.retrieval_drafts import DEFAULT_DRAFT_DIRECTORY
+from ai_learning.retrieval_working_set import (
+    DEFAULT_REVIEWED_WORKSHEET, load_evaluation_dataset, validate_checkpoint,
 )
 from app.rag.documents import DocumentFormatError, load_corpus
-from app.schemas.golden_retrieval import GoldenRetrievalDataset
 from app.schemas.retrieval_evaluation import RecordedRetrievalRun
 from app.services.retrieval_evaluation import (
     RetrievalEvaluationError,
@@ -26,17 +28,6 @@ from app.services.retrieval_evaluation import (
     evaluate_retrieval,
     render_retrieval_markdown,
 )
-
-
-def validate_checkpoint(dataset: GoldenRetrievalDataset, *, corpus_directory: Path) -> None:
-    checkpoint = load_worksheet(
-        DEFAULT_WORKSHEET, corpus_directory=corpus_directory, require_complete=True,
-    )
-    if checkpoint.dataset_sha256 != HUMAN_CHECKPOINT_SHA256:
-        raise RetrievalEvaluationError("The preserved human checkpoint has changed.")
-    assert checkpoint.dataset is not None
-    if dataset.cases[:10] != checkpoint.dataset.cases:
-        raise RetrievalEvaluationError("The first ten labels must match the human checkpoint.")
 
 
 def _read_results(path: Path) -> RecordedRetrievalRun:
@@ -50,7 +41,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Validate Week 4 labels or score saved rankings without providers or database access.",
     )
-    parser.add_argument("--worksheet", type=Path, default=DEFAULT_WORKSHEET)
+    parser.add_argument("--worksheet", type=Path, help="Defaults to reviewed labels with --include-provisional, otherwise the original ten.")
+    parser.add_argument("--include-provisional", action="store_true")
+    parser.add_argument("--draft-directory", type=Path, default=DEFAULT_DRAFT_DIRECTORY)
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--minimum-cases", type=int, choices=range(10, 201), default=10, metavar="10..200")
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -64,28 +57,30 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_cli(args: argparse.Namespace) -> int:
     try:
-        loaded = load_worksheet(
-            args.worksheet, corpus_directory=args.corpus, require_complete=True,
+        worksheet = args.worksheet or (DEFAULT_REVIEWED_WORKSHEET if args.include_provisional else DEFAULT_WORKSHEET)
+        dataset = load_evaluation_dataset(
+            worksheet=worksheet, corpus_directory=args.corpus,
+            include_provisional=args.include_provisional, draft_directory=args.draft_directory,
         )
-        assert loaded.dataset is not None
-        validate_checkpoint(loaded.dataset, corpus_directory=args.corpus)
-        if loaded.completed_labels < args.minimum_cases:
+        if len(dataset.cases) < args.minimum_cases:
             raise RetrievalEvaluationError("The dataset does not meet the requested minimum case count.")
         corpus = load_corpus(args.corpus)
         if args.validate_only:
             if args.baseline_results is not None or args.maximum_metric_drop != 0:
                 raise RetrievalEvaluationError("Baseline options require --results.")
             print(
-                f"Validated {loaded.completed_labels} Week 4 labels; human checkpoint preserved. "
-                f"Dataset SHA-256: {loaded.dataset_sha256}; corpus SHA-256: {corpus_sha256(corpus)}"
+                f"Validated {len(dataset.cases)} Week 4 cases; human checkpoint preserved. "
+                f"Dataset SHA-256: {canonical_sha256(dataset)}; corpus SHA-256: {corpus_sha256(corpus)}"
             )
+            if args.include_provisional:
+                print(f"Reviewed: {len(dataset.reviewed.cases)}; provisional: {len(dataset.provisional)}.")
             return 0
         if args.baseline_results is None and args.maximum_metric_drop != 0:
             raise RetrievalEvaluationError("A metric-drop allowance requires --baseline-results.")
-        report = evaluate_retrieval(loaded.dataset, corpus, _read_results(args.results))
+        report = evaluate_retrieval(dataset, corpus, _read_results(args.results))
         if args.baseline_results is not None:
             baseline = evaluate_retrieval(
-                loaded.dataset, corpus, _read_results(args.baseline_results),
+                dataset, corpus, _read_results(args.baseline_results),
             )
             report = compare_retrieval_reports(
                 report, baseline, maximum_metric_drop=args.maximum_metric_drop,
@@ -94,7 +89,7 @@ def run_cli(args: argparse.Namespace) -> int:
             args.output_directory / "report.json",
             args.output_directory / "report.md",
         )
-        inputs = [args.worksheet, DEFAULT_WORKSHEET, args.results]
+        inputs = [worksheet, DEFAULT_WORKSHEET, args.results]
         if args.baseline_results is not None:
             inputs.append(args.baseline_results)
         if any(

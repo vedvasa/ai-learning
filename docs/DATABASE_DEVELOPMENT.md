@@ -340,12 +340,12 @@ golden worksheet with `model_assisted` origin, actual reviewer role/date, and
 does not approve unreviewed fields or other cases. Review can proceed while
 the experiment is prepared.
 
-The next evaluator increment must accept provisional cases explicitly, pin
-their inputs, and produce separate human-reference and provisional metrics
+The evaluator accepts provisional cases explicitly with `--include-provisional`,
+pins their inputs, and produces separate human-reference and provisional metrics
 with their own counts, relevance denominators, and categories. Human-reference
 relevance scores drive acceptance; provisional scores guide investigation.
 Execution failures and unauthorized results fail checks in either group.
-Do not bypass the current golden schema to simulate this support.
+The separate working-set contract preserves the strict golden schema.
 
 ## Score Week 4 retrieval results offline
 
@@ -359,9 +359,9 @@ uv run --no-sync rag-retrieval-evaluation --validate-only
 This command validates the completed worksheet, corpus pins, and exact first
 ten labels without reading settings or connecting to a provider/database. Add
 `--minimum-cases 40` to require forty labels in the supplied golden worksheet;
-that check intentionally fails on the ten-label checkpoint. Under ADR 0018 it
-is no longer the completion gate for the mixed 40-case working set. Separate
-provisional inputs/reporting still need implementation.
+that check intentionally fails on the ten-label checkpoint. Add
+`--include-provisional --minimum-cases 40` to validate the full working set;
+that mode defaults to the reviewed worksheet and excludes accepted draft IDs.
 Use `--worksheet datasets/rag-evaluation/week4_reviewed_labels.json` for the
 16-case reviewed set, whose first ten labels exactly match the checkpoint.
 
@@ -372,6 +372,14 @@ uv run --no-sync rag-retrieval-evaluation \
   --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
   --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json
 ```
+
+For a saved 40-case run, supply `--include-provisional --results PATH` and,
+optionally, `--baseline-results PATH`. A ten-case saved run is incompatible
+with the working-set hash. Reports separate reviewed/provisional metrics and
+category breakdowns; mixed overall relevance values are null. Reviewed
+relevance deltas gate acceptance, provisional deltas are diagnostic, and
+failures/leakage in either group fail. Review-status changes invalidate the
+dataset hash and prevent incompatible comparisons.
 
 The output is `artifacts/retrieval-evaluation/report.json` plus `report.md`.
 `--output-directory PATH` changes their directory. Reports cannot overwrite the
@@ -405,7 +413,7 @@ The future capture adapter must establish those properties. Unknown timing or
 token values must be null, never invented zeroes.
 
 To compare two compatible saved runs, supply `--results CURRENT.json` and
-`--baseline-results BASELINE.json`. The default allowed drop in each overall
+`--baseline-results BASELINE.json`. The default allowed drop in each reviewed
 relevance metric is zero. `--maximum-metric-drop 0.05` would allow five
 percentage points in hit rate/recall and 0.05 in MRR; it is an operator choice,
 not an adopted release threshold. Mismatched dataset, corpus, configuration,
@@ -417,6 +425,84 @@ metric regression (reports are still written), and 2 for invalid inputs or an
 output error. Routine CI exercises this command and a deliberately degraded
 synthetic ranking. It does not yet test the real chunker/search quality gate.
 See ADR 0016 for metric definitions and evidence limits.
+
+## Capture and execute the Week 4 vector baseline
+
+This workflow uses the forty-case working set, preserving 16 reviewed cases
+and 24 provisional cases. Reinstall the current source, then preview the
+inputs without settings, credentials, provider clients, or database access:
+
+```bash
+uv sync --locked --no-editable --reinstall-package ai-learning
+uv run --no-sync rag-vector-baseline --plan
+```
+
+The current plan is 21 documents, 63 chunks, 40 queries, approximately 3,791
+input tokens, and at most two synchronous API requests with batches of 64.
+The public tokenizer asset may download on first local use; the production
+image caches it and verifies planning with its network disabled.
+
+**Paid operator step — run only after explicit approval.** On a clean committed
+checkout, run this command yourself in an interactive terminal. Enter the API
+key only at its hidden prompt. The command does not read `.env`, save the key,
+accept it as an argument, or print it. Codex must never enter or view it.
+
+```bash
+uv run --no-sync rag-vector-baseline \
+  --capture-to artifacts/vector-baseline/vectors.json \
+  --confirm-spend --maximum-input-tokens 4000
+```
+
+At the published `text-embedding-3-small` rate checked on 2026-09-30,
+$0.02 per million input tokens, the planned capture is approximately
+$0.00007582; the 4,000-input-token preflight allowance corresponds to $0.00008
+at that rate. This is an estimate, not an invoice or account-level billing cap.
+Recheck pricing before later captures. [Official model pricing](https://developers.openai.com/api/docs/models/text-embedding-3-small).
+
+Capture makes no database calls. It refuses an existing output file and does
+not retry failed provider requests automatically. After a failure, do not
+blindly rerun paid work: part of the approved budget may already have been
+used. The saved vectors contain hashes and identifiers rather than text, and
+include aggregate actual provider usage. Keep them under ignored `artifacts/`
+until deliberately recording the fictional release evidence.
+
+**Provider-free local execution.** With the disposable Supabase stack running
+and migrations applied, rerun the real search query using those vectors:
+
+```bash
+uv run --no-sync rag-vector-baseline \
+  --execute artifacts/vector-baseline/vectors.json
+```
+
+This connects only to the standard loopback development database on port 54322
+(`--local-port` can select another loopback port). It does not read a database
+URL or application settings. It creates temporary copies of the three search
+tables, runs all forty queries, and always rolls back and closes the connection.
+No persistent corpus, conversation, or telemetry rows are written. The default
+output is `artifacts/vector-baseline/{results.json,report.json,report.md}`.
+
+Repeat and compare without more paid calls, keeping the baseline input separate:
+
+```bash
+uv run --no-sync rag-vector-baseline \
+  --execute artifacts/vector-baseline/vectors.json \
+  --baseline-results artifacts/vector-baseline/results.json \
+  --output-directory artifacts/vector-baseline-repeat
+```
+
+Results pin the working-set, corpus, configuration, capture hash, and source
+revision. Different review status or vector inputs invalidate comparison.
+Current chunk reconstruction must match captured chunk identities/hashes;
+changing chunking requires a new appropriately approved capture. Real local
+search timing is recorded, but temporary-table timings do not measure the
+hosted API. Embedding usage covers corpus plus queries and is not assigned
+artificially to individual cases. The original saved-ranking command remains
+a replay, distinct from executing SQL. See ADR 0019 for these limits.
+
+Record the actual baseline and discuss misses only after a real capture and
+execution. Synthetic vector integration tests exercise the query and isolation;
+they do not establish semantic quality. Leave paid capture, dataset judgments,
+and deployment as separate decisions; no deployment is necessary to run this lab.
 
 ## Hosted-project boundary
 

@@ -35,6 +35,8 @@ jobs:
           uv run --no-sync rag-retrieval-drafts --check-review-sheets
           uv run --no-sync rag-retrieval-evaluation --validate-only
           uv run --no-sync rag-retrieval-evaluation --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
+          uv run --no-sync rag-retrieval-evaluation --include-provisional --minimum-cases 40 --validate-only
+          uv run --no-sync rag-vector-baseline --plan
           uv run --no-sync rag-retrieval-evaluation \
             --results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json \
             --baseline-results tests/fixtures/retrieval_evaluation/synthetic_week4_rankings.json
@@ -95,6 +97,7 @@ jobs:
           tests/test_answer_repository.py
           tests/test_ingestion_repository.py
           tests/test_retrieval_repository.py
+          tests/test_vector_baseline_database.py
 
       - name: Lint database schema
         run: >-

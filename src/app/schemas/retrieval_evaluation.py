@@ -56,10 +56,19 @@ class RecordedRetrievalCase(StrictRetrievalEvaluationModel):
         return self
 
 
+class EmbeddingCaptureUsage(StrictRetrievalEvaluationModel):
+    calls: int = Field(ge=0, strict=True)
+    input_tokens: int | None = Field(default=None, ge=0, strict=True)
+    latency_ms: NonNegativeFloat | None = None
+
+
 class RecordedRetrievalRun(StrictRetrievalEvaluationModel):
     schema_version: Literal["1.0"] = "1.0"
     evidence_kind: EvidenceKind
     source_revision: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    search_execution: Literal["unspecified", "local_pgvector"] = "unspecified"
+    vector_capture_sha256: Sha256 | None = None
+    capture_usage: EmbeddingCaptureUsage | None = None
     dataset_sha256: Sha256
     corpus_sha256: Sha256
     configuration: VectorEvaluationConfiguration
@@ -74,6 +83,8 @@ class RecordedRetrievalRun(StrictRetrievalEvaluationModel):
             raise ValueError("results exceed the configured top k")
         if self.evidence_kind == "recorded_exact_vector" and self.source_revision is None:
             raise ValueError("recorded vector runs require a source revision")
+        if self.search_execution == "local_pgvector" and self.vector_capture_sha256 is None:
+            raise ValueError("local executions must identify their captured vectors")
         return self
 
 
@@ -103,13 +114,22 @@ class RetrievalComparison(StrictRetrievalEvaluationModel):
     maximum_metric_drop: Rate
     metric_deltas: dict[str, float | None]
     regressed_metrics: tuple[str, ...]
+    provisional_metric_deltas: dict[str, float | None] = Field(default_factory=dict)
+
+
+class RetrievalGroupReport(StrictRetrievalEvaluationModel):
+    metrics: RetrievalMetrics
+    by_category: dict[str, RetrievalMetrics]
 
 
 class RetrievalEvaluationReport(StrictRetrievalEvaluationModel):
-    schema_version: Literal["1.0"] = "1.0"
-    evaluation_mode: Literal["ranked_result_replay"] = "ranked_result_replay"
+    schema_version: Literal["1.1"] = "1.1"
+    evaluation_mode: Literal["ranked_result_replay", "local_vector_execution"] = "ranked_result_replay"
     evidence_kind: EvidenceKind
     source_revision: str | None
+    search_execution: Literal["unspecified", "local_pgvector"]
+    vector_capture_sha256: Sha256 | None
+    capture_usage: EmbeddingCaptureUsage | None
     dataset_version: str
     dataset_sha256: Sha256
     corpus_sha256: Sha256
@@ -117,6 +137,7 @@ class RetrievalEvaluationReport(StrictRetrievalEvaluationModel):
     configuration: VectorEvaluationConfiguration
     metrics: RetrievalMetrics
     by_category: dict[str, RetrievalMetrics]
+    by_group: dict[Literal["reviewed", "provisional"], RetrievalGroupReport]
     comparison: RetrievalComparison | None = None
     gate_passed: bool
     replay_provider_calls: Literal[0] = 0

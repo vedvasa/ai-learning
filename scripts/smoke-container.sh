@@ -50,6 +50,8 @@ docker run --rm --entrypoint rag-golden-dataset "$IMAGE"
 docker run --rm --entrypoint rag-retrieval-evaluation "$IMAGE" --validate-only
 docker run --rm --entrypoint rag-retrieval-evaluation "$IMAGE" --worksheet datasets/rag-evaluation/week4_reviewed_labels.json --validate-only
 docker run --rm --entrypoint rag-retrieval-drafts "$IMAGE" --check-review-sheets
+docker run --rm --entrypoint rag-retrieval-evaluation "$IMAGE" --include-provisional --minimum-cases 40 --validate-only
+docker run --rm --network none --entrypoint rag-vector-baseline "$IMAGE" --plan
 
 docker run \
   --detach \
